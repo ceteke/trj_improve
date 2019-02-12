@@ -1,6 +1,6 @@
 from dmp.rl import DMPPower
 from data import Demonstration
-from sparse2dense import Sparse2Dense
+from sparse2dense import Sparse2Dense, QS2D
 from goal_model import HMMGoalModel
 import numpy as np
 from sklearn.decomposition import PCA
@@ -16,7 +16,7 @@ class TrajectoryLearning(object):
         per_data = self.pca.fit_transform(self.demo.per_feats)
 
         self.goal_model = HMMGoalModel(per_data)
-        self.s2d = Sparse2Dense(self.goal_model)
+        self.s2d = QS2D(self.goal_model)
 
         self.delta = np.diff(self.demo.times).mean()
         print "Delta:", self.delta
@@ -38,10 +38,10 @@ class TrajectoryLearning(object):
         self.dmp.fit(self.demo.times, y_gold, yd_gold, ydd_gold)
 
         self.e = 0
-        self.std = 25
+        self.std = 20
         self.std_initial = self.std
-        self.decay_rate = 0.8
-        self.decay_steps = 1.
+        self.decay_rate = 0.9
+        self.decay_steps = 2.
         self.n_perception = n_perception
 
         self.alpha = alpha

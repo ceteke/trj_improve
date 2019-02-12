@@ -33,10 +33,9 @@ class Sparse2Dense(object):
 
 
 class QS2D(object):
-    def __init__(self, goal_model, n_episode=1000, gamma=0.9, eps=1e-3):
+    def __init__(self, goal_model, n_episode=100, gamma=0.9):
         self.goal_model = goal_model
         self.gamma = gamma
-        self.eps = eps
         self.v_table = np.zeros(self.goal_model.n_components)
         self.actions = np.arange(self.goal_model.n_components)
         self.states = np.arange(self.goal_model.n_components)
@@ -51,23 +50,24 @@ class QS2D(object):
                 s = states[t]
                 r = rewards[t]
 
-                vals = []
+                qs = []
                 for a in self.actions:
                     v = 0.0
                     for s_prime in self.states:
                         v += self.goal_model.hmm.transmat_[s][s_prime]*self.v_table[s_prime]
-                    vals.append(r+self.gamma*v)
+                    qs.append(r+self.gamma*v)
 
-                self.v_table[s] = np.max(vals)
+                self.v_table[s] = np.max(qs)
 
-        self.v_table /= np.max(self.v_table)
-        print self.v_table
 
     def get_reward(self, per_seq):
         states = self.goal_model.hmm.predict(per_seq)
         rewards = []
 
         for t in range(len(states)-1):
-            rewards.append(self.v_table[states[t]])
+            s = states[t]
+            s_prime = states[t+1]
 
-        return rewards
+            rewards.append(self.goal_model.hmm.transmat_[s][s_prime]*self.v_table[s])
+
+        return np.array(rewards)
