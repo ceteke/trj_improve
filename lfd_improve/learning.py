@@ -79,7 +79,7 @@ class TrajectoryLearning(object):
         else:
             jerk_reward = 0.0
 
-        perception_reward = perception_reward.sum()
+        perception_reward = perception_reward[-1]
         total_reward = self.alpha*perception_reward + self.beta*jerk_reward
 
         print "\tJerk Reward:", jerk_reward
