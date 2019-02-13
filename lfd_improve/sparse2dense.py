@@ -64,10 +64,8 @@ class QS2D(object):
         states = self.goal_model.hmm.predict(per_seq)
         rewards = []
 
-        for t in range(len(states)-1):
+        for t in range(len(states)):
             s = states[t]
-            s_prime = states[t+1]
-
-            rewards.append(self.goal_model.hmm.transmat_[s][s_prime]*self.v_table[s])
+            rewards.append(self.v_table[s])
 
         return np.array(rewards)

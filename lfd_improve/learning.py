@@ -1,10 +1,11 @@
 from dmp.rl import DMPPower
 from data import Demonstration
-from sparse2dense import Sparse2Dense, QS2D
+from sparse2dense import QS2D
 from goal_model import HMMGoalModel
 import numpy as np
 from sklearn.decomposition import PCA
 import scipy.signal
+from spliner import Spliner
 
 
 class TrajectoryLearning(object):
@@ -21,15 +22,8 @@ class TrajectoryLearning(object):
         self.delta = np.diff(self.demo.times).mean()
         print "Delta:", self.delta
 
-        y_gold = self.demo.ee_poses
-        yd_gold = np.zeros_like(y_gold)
-        ydd_gold = np.zeros_like(y_gold)
-
-        for j in range(7):
-            yd_gold[:, j] = scipy.signal.savgol_filter(y_gold[:, j], window_length=5, polyorder=3, deriv=1,
-                                                          delta=self.delta)
-            ydd_gold[:, j] = scipy.signal.savgol_filter(y_gold[:, j], window_length=5, polyorder=3, deriv=2,
-                                                           delta=self.delta)
+        self.spliner = Spliner(self.demo.times, self.demo.ee_poses)
+        _, y_gold, yd_gold, ydd_gold, _ = self.spliner.get_motion
 
         y_gold = y_gold.reshape(1,-1,7)
         yd_gold = yd_gold.reshape(1,-1,7)
@@ -66,18 +60,8 @@ class TrajectoryLearning(object):
         if per_trj.shape[-1] != self.n_perception:
             per_trj = self.pca.transform(per_trj)
 
-        perception_reward = self.s2d.get_reward(per_trj)
-
-        if jerk:
-            jerks = np.zeros_like(self.dmp.ddx_episode)
-
-            for d in range(7):
-                jerks[:, d] = scipy.signal.savgol_filter(self.dmp.ddx_episode[:, d], window_length=5, polyorder=3,
-                                                         deriv=1, delta=self.delta)
-
-            jerk_reward = -jerks.sum()
-        else:
-            jerk_reward = 0.0
+        perception_reward = self.s2d.get_reward(per_trj)[-1]
+        jerk_reward = 0.0
 
         perception_reward = perception_reward[-1]
         total_reward = self.alpha*perception_reward + self.beta*jerk_reward
