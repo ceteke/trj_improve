@@ -42,23 +42,25 @@ class QS2D(object):
 
         for e in range(n_episode):
             features, states = self.goal_model.hmm.sample(self.goal_model.T)
-            is_success = self.goal_model.is_success(features)
-            rewards = [0.]*len(states)
-            rewards[-1] = 1.0 if is_success else -1.0
+            self.update(features, states)
 
-            for t in range(len(states)):
-                s = states[t]
-                r = rewards[t]
+    def update(self, features, states):
+        is_success = self.goal_model.is_success(features)
+        rewards = [0.] * len(states)
+        rewards[-1] = 1.0 if is_success else -1.0
 
-                qs = []
-                for a in self.actions:
-                    v = 0.0
-                    for s_prime in self.states:
-                        v += self.goal_model.hmm.transmat_[s][s_prime]*self.v_table[s_prime]
-                    qs.append(r+self.gamma*v)
+        for t in range(len(states)):
+            s = states[t]
+            r = rewards[t]
 
-                self.v_table[s] = np.max(qs)
+            qs = []
+            for a in self.actions:
+                v = 0.0
+                for s_prime in self.states:
+                    v += self.goal_model.hmm.transmat_[s][s_prime] * self.v_table[s_prime]
+                qs.append(r + self.gamma * v)
 
+            self.v_table[s] = np.max(qs)
 
     def get_reward(self, per_seq):
         states = self.goal_model.hmm.predict(per_seq)

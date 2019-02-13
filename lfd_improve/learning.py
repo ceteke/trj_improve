@@ -4,7 +4,6 @@ from sparse2dense import QS2D
 from goal_model import HMMGoalModel
 import numpy as np
 from sklearn.decomposition import PCA
-import scipy.signal
 from spliner import Spliner
 
 
@@ -57,13 +56,13 @@ class TrajectoryLearning(object):
         return episode
 
     def get_reward(self, per_trj, jerk):
-        if per_trj.shape[-1] != self.n_perception:
-            per_trj = self.pca.transform(per_trj)
-
         perception_reward = self.s2d.get_reward(per_trj)[-1]
-        jerk_reward = 0.0
 
-        perception_reward = perception_reward[-1]
+        if jerk:
+            jerk_reward = 0.0
+        else:
+            jerk_reward = 0.0
+
         total_reward = self.alpha*perception_reward + self.beta*jerk_reward
 
         print "\tJerk Reward:", jerk_reward
@@ -74,6 +73,9 @@ class TrajectoryLearning(object):
 
     def update(self, per_trj, jerk=False):
         if per_trj is not None:
+            if per_trj.shape[-1] != self.n_perception:
+                per_trj = self.pca.transform(per_trj)
+
             reward = self.get_reward(per_trj, jerk)
         else:
             reward = 0
