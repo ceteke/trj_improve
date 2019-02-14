@@ -8,7 +8,7 @@ from spliner import Spliner
 
 
 class TrajectoryLearning(object):
-    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, n_perception=8, alpha=1., beta=0.5):
+    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, n_perception=8, alpha=1., beta=.25):
         self.dmp = DMPPower(n_basis, K, n_sample)
         self.demo = Demonstration(demo_dir)
         self.n_episode = n_episode
@@ -25,10 +25,6 @@ class TrajectoryLearning(object):
         self.spliner = Spliner(self.demo.times, self.demo.ee_poses)
         t_gold, y_gold, yd_gold, ydd_gold, yddd_gold = self.spliner.get_motion
 
-        y_gold = y_gold.reshape(1,-1,7)
-        yd_gold = yd_gold.reshape(1,-1,7)
-        ydd_gold = ydd_gold.reshape(1,-1,7)
-
         self.dmp.fit(t_gold, y_gold, yd_gold, ydd_gold)
 
         self.e = 0
@@ -38,7 +34,9 @@ class TrajectoryLearning(object):
         self.n_perception = n_perception
 
         self.alpha = alpha
-        self.beta = beta * (self.s2d.v_table.max()/np.linalg.norm(yddd_gold, axis=1).mean())
+        self.beta = beta * (self.s2d.v_table.max()/self.get_jerk_reward(t_gold, y_gold))
+
+        print "Beta:", self.beta
 
     def decay_std(self, initial):
         if self.e >= self.decay_episode:
@@ -54,14 +52,17 @@ class TrajectoryLearning(object):
 
         return episode
 
+    def get_jerk_reward(self, t, x):
+        episode_spliner = Spliner(t, x)
+        _, _, _, _, dddx_episode = episode_spliner.get_motion
+        total_jerk = np.linalg.norm(dddx_episode, axis=1).sum()
+        return 1. / total_jerk
+
     def get_reward(self, per_trj, jerk):
         perception_reward = self.s2d.get_reward(per_trj)[-1]
 
         if jerk:
-            episode_spliner = Spliner(self.dmp.t_episode, self.dmp.x_episode)
-            _,_,_,_,dddx_episode = episode_spliner.get_motion
-            total_jerk = np.linalg.norm(dddx_episode, axis=1).mean()
-            jerk_reward = -total_jerk
+            jerk_reward = self.get_jerk_reward(self.dmp.t_episode, self.dmp.x_episode)
         else:
             jerk_reward = 0.0
 

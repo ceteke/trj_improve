@@ -18,8 +18,7 @@ ts, y_gold, yd_gold, ydd_gold, yddd_gold = spliner.get_motion
 print np.linalg.norm(yddd_gold, axis=1).mean()
 print '--'
 dmp.fit(ts, y_gold, yd_gold, ydd_gold)
-print dmp.w.shape
-print dmp.w.std(axis=1).mean()
+
 
 f,axs = plt.subplots(3)
 
@@ -34,9 +33,9 @@ for i in range(3):
 dmp_spliner = Spliner(ts, p_dmp)
 _,_,_,_,jerks = dmp_spliner.get_motion
 
-print np.linalg.norm(jerks, axis=1).mean()
+print np.linalg.norm(jerks, axis=1).sum()
 
-ts, p_dmp, _, ddp_dmp = dmp.imitate(w=np.loadtxt('/home/ceteke/Desktop/ex_dmp/dmp50.csv'))
+ts, p_dmp, _, ddp_dmp = dmp.imitate(w=np.loadtxt('/home/ceteke/Desktop/ex_dmp/dmp7.csv'))
 
 for i in range(3):
     axs[i].plot(ts, p_dmp[:,i])
@@ -44,6 +43,6 @@ for i in range(3):
 dmp_improved_spliner = Spliner(ts, p_dmp)
 _,_,_,_,jerks = dmp_improved_spliner.get_motion
 
-print np.linalg.norm(jerks, axis=1).mean()
-print np.loadtxt('/home/ceteke/Desktop/ex_dmp/dmp50.csv').std(axis=1)
+print np.linalg.norm(jerks, axis=1).sum()
+print np.loadtxt('/home/ceteke/Desktop/ex_dmp/dmp20.csv').std(axis=1)
 plt.show()
