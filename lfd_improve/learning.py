@@ -8,9 +8,10 @@ from spliner import Spliner
 
 
 class TrajectoryLearning(object):
-    def __init__(self, demo_dir, n_basis, K, n_sample, n_perception=8, alpha=1., beta=0.1):
+    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, n_perception=8, alpha=1., beta=0.5):
         self.dmp = DMPPower(n_basis, K, n_sample)
         self.demo = Demonstration(demo_dir)
+        self.n_episode = n_episode
 
         self.pca = PCA(n_components=n_perception)
         per_data = self.pca.fit_transform(self.demo.per_feats)
@@ -22,29 +23,27 @@ class TrajectoryLearning(object):
         print "Delta:", self.delta
 
         self.spliner = Spliner(self.demo.times, self.demo.ee_poses)
-        _, y_gold, yd_gold, ydd_gold, _ = self.spliner.get_motion
+        t_gold, y_gold, yd_gold, ydd_gold, yddd_gold = self.spliner.get_motion
 
         y_gold = y_gold.reshape(1,-1,7)
         yd_gold = yd_gold.reshape(1,-1,7)
         ydd_gold = ydd_gold.reshape(1,-1,7)
 
-        self.dmp.fit(self.demo.times, y_gold, yd_gold, ydd_gold)
+        self.dmp.fit(t_gold, y_gold, yd_gold, ydd_gold)
 
         self.e = 0
-        self.std = 20
+        self.std = self.dmp.w.std(axis=1).mean()
         self.std_initial = self.std
-        self.decay_rate = 0.9
-        self.decay_steps = 2.
+        self.decay_episode = self.n_episode / 2.
         self.n_perception = n_perception
 
         self.alpha = alpha
-        self.beta = beta
-
-    def sigm(self, x):
-        return 1./(1.+np.exp(-x))
+        self.beta = beta * (self.s2d.v_table.max()/np.linalg.norm(yddd_gold, axis=1).mean())
 
     def decay_std(self, initial):
-        return initial * self.decay_rate ** (self.e / self.decay_steps)
+        if self.e >= self.decay_episode:
+            return initial * (1. - ((self.e - self.decay_episode) / (self.n_episode - self.decay_episode)))
+        return initial
 
     def generate_episode(self):
         print "STD:", self.std
@@ -59,7 +58,10 @@ class TrajectoryLearning(object):
         perception_reward = self.s2d.get_reward(per_trj)[-1]
 
         if jerk:
-            jerk_reward = 0.0
+            episode_spliner = Spliner(self.dmp.t_episode, self.dmp.x_episode)
+            _,_,_,_,dddx_episode = episode_spliner.get_motion
+            total_jerk = np.linalg.norm(dddx_episode, axis=1).mean()
+            jerk_reward = -total_jerk
         else:
             jerk_reward = 0.0
 
@@ -71,7 +73,7 @@ class TrajectoryLearning(object):
 
         return total_reward
 
-    def update(self, per_trj, jerk=False):
+    def update(self, per_trj, jerk=True):
         if per_trj is not None:
             if per_trj.shape[-1] != self.n_perception:
                 per_trj = self.pca.transform(per_trj)
