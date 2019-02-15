@@ -8,7 +8,7 @@ from spliner import Spliner
 
 
 class TrajectoryLearning(object):
-    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, n_perception=8, alpha=1., beta=.25):
+    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, n_perception=8, alpha=1., beta=.5):
         self.dmp = DMPPower(n_basis, K, n_sample)
         self.demo = Demonstration(demo_dir)
         self.n_episode = n_episode
@@ -30,7 +30,7 @@ class TrajectoryLearning(object):
         self.e = 0
         self.std = self.dmp.w.std(axis=1).mean()
         self.std_initial = self.std
-        self.decay_episode = self.n_episode / 2.
+        self.decay_episode = self.n_episode / 4.
         self.n_perception = n_perception
 
         self.alpha = alpha

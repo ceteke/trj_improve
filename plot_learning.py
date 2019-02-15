@@ -35,7 +35,7 @@ _,_,_,_,jerks = dmp_spliner.get_motion
 
 print np.linalg.norm(jerks, axis=1).sum()
 
-ts, p_dmp, _, ddp_dmp = dmp.imitate(w=np.loadtxt('/home/ceteke/Desktop/ex_dmp/dmp7.csv'))
+ts, p_dmp, _, ddp_dmp = dmp.imitate(w=np.loadtxt('/home/ceteke/Desktop/ex_dmp/dmp20.csv'))
 
 for i in range(3):
     axs[i].plot(ts, p_dmp[:,i])

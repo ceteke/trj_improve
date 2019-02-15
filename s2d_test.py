@@ -9,7 +9,7 @@ goal_model = HMMGoalModel(action)
 
 qs2d = QS2D(goal_model)
 
-fail_close = pickle.load(open('/home/ceteke/Desktop/data/fail_close.pk', 'rb'))
+fail_close = pickle.load(open('/home/ceteke/Desktop/rewad_learning_data/fail_close.pk', 'rb'))
 fail_rewards = []
 
 for fail in fail_close:
@@ -18,7 +18,7 @@ for fail in fail_close:
 
 plt.plot(np.mean(fail_rewards, axis=0), label='fail')
 
-success_close = pickle.load(open('/home/ceteke/Desktop/data/success_close.pk', 'rb'))
+success_close = pickle.load(open('/home/ceteke/Desktop/rewad_learning_data/success_close.pk', 'rb'))
 success_rewards = []
 
 for success in success_close:

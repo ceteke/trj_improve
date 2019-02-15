@@ -40,9 +40,26 @@ class QS2D(object):
         self.actions = np.arange(self.goal_model.n_components)
         self.states = np.arange(self.goal_model.n_components)
 
-        for e in range(n_episode):
+        n_pos, n_neg = 0, 0
+
+        while True:
             features, states = self.goal_model.hmm.sample(self.goal_model.T)
+            is_success = self.goal_model.is_success(features)
+
+            if is_success and n_pos == n_episode//2:
+                continue
+
+            if is_success:
+                n_pos += 1
+            else:
+                n_neg += 1
+
             self.update(features, states)
+
+            if n_pos + n_neg == n_episode:
+                break
+
+        print n_pos, n_neg
 
     def update(self, features, states):
         is_success = self.goal_model.is_success(features)
