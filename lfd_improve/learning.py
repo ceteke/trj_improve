@@ -8,10 +8,11 @@ from spliner import Spliner
 
 
 class TrajectoryLearning(object):
-    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, n_perception=8, alpha=1., beta=1.):
+    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=1.):
         self.dmp = DMPPower(n_basis, K, n_sample)
         self.demo = Demonstration(demo_dir)
         self.n_episode = n_episode
+        self.is_sparse = is_sparse
 
         self.pca = PCA(n_components=n_perception)
         per_data = self.pca.fit_transform(self.demo.per_feats)
@@ -38,10 +39,21 @@ class TrajectoryLearning(object):
 
         print "Beta:", self.beta
 
+    def __str__(self):
+        return "N Basis: {}\nK:{}\nD:\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}".format(
+            self.dmp.n_basis, self.dmp.K, self.dmp.D, self.alpha, self.beta, self.dmp.n_sample, self.n_episode, self.std_initial,
+            self.decay_episode, self.is_sparse
+        )
+
     def decay_std(self, initial):
         if self.e >= self.decay_episode:
             return initial * (1. - ((self.e - self.decay_episode) / (self.n_episode - self.decay_episode)))
         return initial
+
+    def update_std(self, episode):
+        for e in range(episode):
+            self.e += 1
+            self.std = self.decay_std(self.std_initial)
 
     def generate_episode(self):
         print "STD:", self.std
@@ -59,30 +71,38 @@ class TrajectoryLearning(object):
         return 1. / total_jerk
 
     def get_reward(self, per_trj, jerk):
-        perception_reward = self.s2d.get_reward(per_trj)[-1]
+
+        if self.is_sparse:
+            perception_reward = 1.0 if self.goal_model.is_success(per_trj) else -1.0
+        else:
+            perception_reward = self.s2d.get_reward(per_trj)[-1]
 
         if jerk:
             jerk_reward = self.get_jerk_reward(self.dmp.t_episode, self.dmp.x_episode)
         else:
             jerk_reward = 0.0
 
-        total_reward = self.alpha*perception_reward + self.beta*jerk_reward
+        perception_reward = self.alpha*perception_reward
+        jerk_reward = self.beta*jerk_reward
 
         print "\tJerk Reward:", jerk_reward
         print "\tPerception Reward:", perception_reward
-        print "\tTotal Reward:", total_reward
 
-        return total_reward
+        return perception_reward, jerk_reward
 
     def update(self, per_trj, jerk=True):
         if per_trj is not None:
             if per_trj.shape[-1] != self.n_perception:
                 per_trj = self.pca.transform(per_trj)
 
-            reward = self.get_reward(per_trj, jerk)
+            per_rew, jerk_rew = self.get_reward(per_trj, jerk)
+
         else:
-            reward = 0
+            per_rew, jerk_rew = 0., 0.
+
+        reward = per_rew + jerk_rew
+        print "\tTotal Reward:", reward
 
         self.dmp.update(reward)
 
-        return reward
+        return per_rew, jerk_rew
