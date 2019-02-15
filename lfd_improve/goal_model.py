@@ -19,7 +19,7 @@ class HMMGoalModel(object):
         map(lambda g: g.fit(per_seq), hmms)
         scores = map(lambda g: g.score(per_seq), hmms)
 
-        self.hmm = sorted(zip(scores, hmms))[-1][1]
+        max_score, self.hmm = sorted(zip(scores, hmms))[-1]
         print "Goal HMM n_components", self.hmm.n_components
         self.final_states = np.array(self.hmm.predict(per_seq)).reshape(-1,n_points)[:,-1]
 

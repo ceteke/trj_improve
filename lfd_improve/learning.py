@@ -8,7 +8,9 @@ from spliner import Spliner
 
 
 class TrajectoryLearning(object):
-    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=.5):
+    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=.5,
+                 values=None):
+
         self.dmp = DMPPower(n_basis, K, n_sample)
         self.demo = Demonstration(demo_dir)
         self.n_episode = n_episode
@@ -18,7 +20,14 @@ class TrajectoryLearning(object):
         per_data = self.pca.fit_transform(self.demo.per_feats)
 
         self.goal_model = HMMGoalModel(per_data)
-        self.s2d = QS2D(self.goal_model)
+
+        if values is None:
+            qs2d_models = [QS2D(self.goal_model) for _ in range(20)]
+            qs2d_models = sorted(qs2d_models, key=lambda x: x.val_var)
+            qs2d_models = sorted(qs2d_models, key=lambda x: x.reward_diff, reverse=True)
+            self.s2d = qs2d_models[0]
+        else:
+            self.s2d = QS2D(self.goal_model, values=values)
 
         self.delta = np.diff(self.demo.times).mean()
         print "Delta:", self.delta
@@ -69,9 +78,10 @@ class TrajectoryLearning(object):
         return 1. / total_jerk
 
     def get_reward(self, per_trj, jerk):
+        is_success = self.goal_model.is_success(per_trj)
 
         if self.is_sparse:
-            perception_reward = 1.0 if self.goal_model.is_success(per_trj) else -1.0
+            perception_reward = 1.0 if is_success else -1.0
         else:
             perception_reward = self.s2d.get_reward(per_trj)[-1]
 
@@ -86,21 +96,23 @@ class TrajectoryLearning(object):
         print "\tJerk Reward:", jerk_reward
         print "\tPerception Reward:", perception_reward
 
-        return perception_reward, jerk_reward
+        return perception_reward, jerk_reward, is_success
 
     def update(self, per_trj, jerk=True):
         if per_trj is not None:
             if per_trj.shape[-1] != self.n_perception:
                 per_trj = self.pca.transform(per_trj)
 
-            per_rew, jerk_rew = self.get_reward(per_trj, jerk)
+            per_rew, jerk_rew, is_success = self.get_reward(per_trj, jerk)
 
         else:
             per_rew, jerk_rew = 0., 0.
+            is_success = False
 
         reward = per_rew + jerk_rew
         print "\tTotal Reward:", reward
+        print "\tIs successful:", is_success
 
         self.dmp.update(reward)
 
-        return per_rew, jerk_rew
+        return per_rew, jerk_rew, is_success
