@@ -8,7 +8,7 @@ from spliner import Spliner
 
 
 class TrajectoryLearning(object):
-    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=1.):
+    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=.5):
         self.dmp = DMPPower(n_basis, K, n_sample)
         self.demo = Demonstration(demo_dir)
         self.n_episode = n_episode
@@ -31,16 +31,14 @@ class TrajectoryLearning(object):
         self.e = 0
         self.std = self.dmp.w.std(axis=1).mean()
         self.std_initial = self.std
-        self.decay_episode = self.n_episode / 2.
+        self.decay_episode = float(self.n_episode // 4)
         self.n_perception = n_perception
 
         self.alpha = alpha
         self.beta = beta * (self.s2d.v_table.max()/self.get_jerk_reward(t_gold, y_gold))
 
-        print "Beta:", self.beta
-
     def __str__(self):
-        return "N Basis: {}\nK:{}\nD:\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}".format(
+        return "N Basis: {}\nK:{}\nD:{}\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}".format(
             self.dmp.n_basis, self.dmp.K, self.dmp.D, self.alpha, self.beta, self.dmp.n_sample, self.n_episode, self.std_initial,
             self.decay_episode, self.is_sparse
         )

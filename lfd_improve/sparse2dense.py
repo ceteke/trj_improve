@@ -34,7 +34,7 @@ class Sparse2Dense(object):
 
 
 class QS2D(object):
-    def __init__(self, goal_model, n_episode=200, gamma=0.9):
+    def __init__(self, goal_model, n_episode=100, gamma=0.9):
         self.goal_model = goal_model
         self.gamma = gamma
         self.v_table = np.zeros(self.goal_model.n_components)
@@ -55,19 +55,19 @@ class QS2D(object):
             else:
                 n_neg += 1
 
-            if self.update(features, states):
-                break
+            self.update(features, states)
 
             if n_pos + n_neg == n_episode:
                 break
 
         print n_pos, n_neg
 
+        self.v_table = (self.v_table - self.v_table.min()) / (self.v_table.max() - self.v_table.min()) # Normalize values
+
     def update(self, features, states):
         is_success = self.goal_model.is_success(features)
         rewards = [0.] * len(states)
         rewards[-1] = 1.0 if is_success else -1.0
-        old_v = copy.deepcopy(self.v_table)
 
         for t in range(len(states)):
             s = states[t]
@@ -81,8 +81,6 @@ class QS2D(object):
                 qs.append(r + self.gamma * v)
 
             self.v_table[s] = np.max(qs)
-
-        return np.max(np.abs(self.v_table-old_v)) <= 1e-5
 
     def get_reward(self, per_seq):
         states = self.goal_model.hmm.predict(per_seq)
