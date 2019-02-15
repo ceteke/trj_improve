@@ -14,7 +14,7 @@ class HMMGoalModel(object):
         components = [2,4,6,8,10]
         n_points, self.n_dims = per_seq.shape
 
-        hmms = [GaussianHMM(n_components=c, tol=0.001, n_iter=100) for c in components]
+        hmms = [GaussianHMM(n_components=c) for c in components]
 
         map(lambda g: g.fit(per_seq), hmms)
         scores = map(lambda g: g.score(per_seq), hmms)
