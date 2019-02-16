@@ -22,7 +22,7 @@ class TrajectoryLearning(object):
         self.goal_model = HMMGoalModel(per_data)
 
         if values is None:
-            qs2d_models = [QS2D(self.goal_model) for _ in range(20)]
+            qs2d_models = [QS2D(self.goal_model) for _ in range(10)]
             qs2d_models = sorted(qs2d_models, key=lambda x: x.val_var)
             qs2d_models = sorted(qs2d_models, key=lambda x: x.reward_diff, reverse=True)
             self.s2d = qs2d_models[0]
@@ -78,6 +78,9 @@ class TrajectoryLearning(object):
         return 1. / total_jerk
 
     def get_reward(self, per_trj, jerk):
+        if per_trj.shape[-1] != self.n_perception:
+            per_trj = self.pca.transform(per_trj)
+
         is_success = self.goal_model.is_success(per_trj)
 
         if self.is_sparse:

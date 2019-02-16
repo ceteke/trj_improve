@@ -70,8 +70,6 @@ class HMMGoalModel(object):
 
     def is_success(self, per_trj):
         per_trj = np.array(per_trj)
-        if per_trj.shape[-1] != self.n_dims:
-            per_trj = self.action.perception_pca.transform(per_trj)
         states = self.hmm.predict(per_trj)
         final_state = states[-1]
         return final_state in self.final_states
