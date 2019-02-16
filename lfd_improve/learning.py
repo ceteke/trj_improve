@@ -2,14 +2,14 @@ from dmp.rl import DMPPower
 from data import Demonstration
 from sparse2dense import QS2D
 from goal_model import HMMGoalModel
-import numpy as np
+import numpy as np, pickle
 from sklearn.decomposition import PCA
 from spliner import Spliner
 
 
 class TrajectoryLearning(object):
     def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=.5,
-                 values=None):
+                 values=None, goal_model=None):
 
         self.dmp = DMPPower(n_basis, K, n_sample)
         self.demo = Demonstration(demo_dir)
@@ -19,7 +19,10 @@ class TrajectoryLearning(object):
         self.pca = PCA(n_components=n_perception)
         per_data = self.pca.fit_transform(self.demo.per_feats)
 
-        self.goal_model = HMMGoalModel(per_data)
+        if goal_model is None:
+            self.goal_model = HMMGoalModel(per_data)
+        else:
+            self.goal_model = goal_model
 
         if values is None:
             qs2d_models = [QS2D(self.goal_model) for _ in range(10)]
@@ -51,6 +54,9 @@ class TrajectoryLearning(object):
             self.dmp.n_basis, self.dmp.K, self.dmp.D, self.alpha, self.beta, self.dmp.n_sample, self.n_episode, self.std_initial,
             self.decay_episode, self.is_sparse
         )
+
+    def save_goal_model(self, dir):
+        pickle.dump(self.goal_model, open(dir, 'wb'))
 
     def decay_std(self, initial):
         if self.e >= self.decay_episode:
