@@ -71,11 +71,12 @@ class TrajectoryLearning(object):
     def generate_episode(self):
         print "STD:", self.std
 
-        self.e += 1
         episode = self.dmp.generate_episode(self.std)
-        self.std = self.decay_std(self.std_initial)
 
         return episode
+
+    def remove_episode(self):
+        del self.dmp.exp_ws[-1]
 
     def get_jerk_reward(self, t, x):
         episode_spliner = Spliner(t, x)
@@ -90,7 +91,7 @@ class TrajectoryLearning(object):
         is_success = self.goal_model.is_success(per_trj)
 
         if self.is_sparse:
-            perception_reward = 1.0 if is_success else -1.0
+            perception_reward = 1.0 if is_success else 0.0
         else:
             perception_reward = self.s2d.get_reward(per_trj)[-1]
 
@@ -123,5 +124,7 @@ class TrajectoryLearning(object):
         print "\tIs successful:", is_success
 
         self.dmp.update(reward)
+        self.e += 1
+        self.std = self.decay_std(self.std_initial)
 
         return per_rew, jerk_rew, is_success
