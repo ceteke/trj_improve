@@ -76,7 +76,7 @@ class TrajectoryLearning(object):
         return episode
 
     def remove_episode(self):
-        del self.dmp.exp_ws[-1]
+        self.dmp.exp_ws = self.dmp.exp_ws[:-1]
 
     def get_jerk_reward(self, t, x):
         episode_spliner = Spliner(t, x)

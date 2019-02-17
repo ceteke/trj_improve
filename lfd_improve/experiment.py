@@ -31,3 +31,7 @@ class Experiment(object):
             perception_rewards[i], jerk_rewards[i], successes[i] = rewards
 
         return perception_rewards, jerk_rewards, successes
+
+    def save_data(self):
+        np.savetxt('perception_greedy.csv', self.perception_rewards_greedy, delimiter=',')
+        np.savetxt('jerk_greedy.csv', self.jerk_rewards_greedy, delimiter=',')
