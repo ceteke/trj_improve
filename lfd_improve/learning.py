@@ -5,19 +5,34 @@ from goal_model import HMMGoalModel
 import numpy as np, pickle
 from sklearn.decomposition import PCA
 from spliner import Spliner
-
+import os
+from utils import align_trajectories
 
 class TrajectoryLearning(object):
-    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=.5,
-                 values=None, goal_model=None):
+    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=.1,
+                 values=None, goal_model=None, goal_data=True):
 
         self.dmp = DMPPower(n_basis, K, n_sample)
         self.demo = Demonstration(demo_dir)
+        self.pca = PCA(n_components=n_perception)
+
+        if goal_data:
+            goal_data_dir = os.path.join(demo_dir, '..', 'goal_demos')
+            per_data = []
+
+            for pk in os.listdir(goal_data_dir):
+                pk = os.path.join(goal_data_dir, pk)
+                per_data.append([p[1] for p in pickle.load(open(pk, 'rb'))][1:])
+
+            per_data = align_trajectories(per_data)
+            N, T, D = per_data.shape
+            per_data = self.pca.fit_transform(per_data.reshape(-1, D)).reshape(N, T, -1)
+        else:
+            per_data = self.pca.fit_transform(self.demo.per_feats).reshape(1, len(self.demo.per_feats), -1)
+
+        print "Perception PCA Exp. Var:", np.sum(self.pca.explained_variance_ratio_)
         self.n_episode = n_episode
         self.is_sparse = is_sparse
-
-        self.pca = PCA(n_components=n_perception)
-        per_data = self.pca.fit_transform(self.demo.per_feats)
 
         if goal_model is None:
             self.goal_model = HMMGoalModel(per_data)
@@ -40,8 +55,9 @@ class TrajectoryLearning(object):
 
         self.dmp.fit(t_gold, y_gold, yd_gold, ydd_gold)
 
-        self.e = 0
-        self.std = self.dmp.w.std(axis=1).mean()
+        self.e = 0.
+        #self.std = self.dmp.w.std(axis=1).mean()
+        self.std = 50.
         self.std_initial = self.std
         self.decay_episode = float(self.n_episode // 4)
         self.n_perception = n_perception

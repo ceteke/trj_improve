@@ -7,21 +7,24 @@ from utils import pdf_multivariate
 
 
 class HMMGoalModel(object):
-    def __init__(self, per_seq):
+    def __init__(self, per_data):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         warnings.filterwarnings("ignore", category=RuntimeWarning)
 
         components = [2,4,6,8,10]
-        n_points, self.n_dims = per_seq.shape
+        n_demos, n_points, self.n_dims = per_data.shape
 
         hmms = [GaussianHMM(n_components=c) for c in components]
 
-        map(lambda g: g.fit(per_seq), hmms)
-        scores = map(lambda g: g.score(per_seq), hmms)
+        per_data = per_data.reshape(-1,self.n_dims)
+        per_lens = [n_points]*n_demos
+
+        map(lambda g: g.fit(per_data, per_lens), hmms)
+        scores = map(lambda g: g.score(per_data, per_lens), hmms)
 
         max_score, self.hmm = sorted(zip(scores, hmms))[-1]
         print "Goal HMM n_components", self.hmm.n_components
-        self.final_states = np.array(self.hmm.predict(per_seq)).reshape(-1,n_points)[:,-1]
+        self.final_states = np.array(self.hmm.predict(per_data, per_lens)).reshape(-1,n_points)[:,-1]
 
         self.n_components = self.hmm.n_components
         self.beliefs = np.zeros((n_points+1,  self.n_components))
