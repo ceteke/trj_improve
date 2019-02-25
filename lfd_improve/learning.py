@@ -10,7 +10,7 @@ from utils import align_trajectories, sampling_fn
 
 class TrajectoryLearning(object):
     def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=.5,
-                 values=None, goal_model=None, goal_data=False, succ_samples=4, h=0.5):
+                 values=None, goal_model=None, goal_data=False, succ_samples=4, h=0.75):
         '''
         :param demo_dir: Demonstration directory
         :param n_basis: Number of DMP basis
@@ -73,8 +73,8 @@ class TrajectoryLearning(object):
         self.dmp.fit(t_gold, y_gold, yd_gold, ydd_gold)
 
         self.e = 1.
-        self.std_ub = 75.
-        self.std = 50.
+        self.std_ub = 65.
+        self.std = 40.
         self.std_initial = self.std
         self.decay_episode = float(self.n_episode // 4)
         self.n_perception = n_perception
@@ -156,21 +156,23 @@ class TrajectoryLearning(object):
             per_rew, jerk_rew = 0., 0.
             is_success = False
 
-        self.last_success.append(is_success)
+        self.last_success.append(per_rew)
 
         if len(self.last_success) > self.succ_samples:
             del self.last_success[0]  # Remove oldest
 
-        success_rate = float(sum(self.last_success))/len(self.last_success)
+        #success_rate = float(sum(self.last_success))/len(self.last_success)
+        #fail_rate = 1.0 - success_rate
 
         reward = per_rew + jerk_rew
         print "\tTotal Reward:", reward
         print "\tIs successful:", is_success
-        print "\tSuccess rate:", success_rate
+        #print "\tSuccess rate:", success_rate
 
         self.dmp.update(reward)
         self.e += 1
-
-        self.std = self.decay_std(self.std_initial) + sampling_fn(success_rate, 0., self.std_ub-self.std_initial, self.h)
+        exp_fac = sampling_fn(1-np.mean(self.last_success), 0., self.std_ub-self.std_initial, self.h)
+        print "EXP:", exp_fac
+        self.std = self.decay_std(self.std_initial) + exp_fac
 
         return per_rew, jerk_rew, is_success
