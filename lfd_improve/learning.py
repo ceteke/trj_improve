@@ -6,11 +6,27 @@ import numpy as np, pickle
 from sklearn.decomposition import PCA
 from spliner import Spliner
 import os
-from utils import align_trajectories
+from utils import align_trajectories, sampling_fn
 
 class TrajectoryLearning(object):
-    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=.1,
-                 values=None, goal_model=None, goal_data=True):
+    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=.5,
+                 values=None, goal_model=None, goal_data=False, succ_samples=4, h=0.5):
+        '''
+        :param demo_dir: Demonstration directory
+        :param n_basis: Number of DMP basis
+        :param K: DMP Spring constant
+        :param n_sample: Number of samples for PoWER update
+        :param n_episode: Number of episodes
+        :param is_sparse: Do you want to use sparse rewards?
+        :param n_perception: Perceptual features size
+        :param alpha: Coefficient of perceptual rewards
+        :param beta: Ratio between max perceptual reward and max jerk reward.
+        :param values: If you don't want to learn rewards set this
+        :param goal_model: If you don't want to learn a new goal model give this
+        :param goal_data: If there is additional goal trajectories give them here
+        :param succ_samples: Number of samples to calculate success rate for adaptive exploration rate
+        :param h: Adaptive exploration rate function parameter (See adaptive_exploration.py)
+        '''
 
         self.dmp = DMPPower(n_basis, K, n_sample)
         self.demo = Demonstration(demo_dir)
@@ -40,12 +56,13 @@ class TrajectoryLearning(object):
             self.goal_model = goal_model
 
         if values is None:
-            qs2d_models = [QS2D(self.goal_model) for _ in range(10)]
-            qs2d_models = sorted(qs2d_models, key=lambda x: x.val_var)
-            qs2d_models = sorted(qs2d_models, key=lambda x: x.reward_diff, reverse=True)
+            qs2d_models = [QS2D(self.goal_model) for _ in range(50)]
+            qs2d_models = sorted(qs2d_models, key=lambda x: x.val_var, reverse=True)
             self.s2d = qs2d_models[0]
         else:
             self.s2d = QS2D(self.goal_model, values=values)
+
+        print self.s2d.v_table
 
         self.delta = np.diff(self.demo.times).mean()
         print "Delta:", self.delta
@@ -55,15 +72,19 @@ class TrajectoryLearning(object):
 
         self.dmp.fit(t_gold, y_gold, yd_gold, ydd_gold)
 
-        self.e = 0.
-        #self.std = self.dmp.w.std(axis=1).mean()
+        self.e = 1.
+        self.std_ub = 75.
         self.std = 50.
         self.std_initial = self.std
         self.decay_episode = float(self.n_episode // 4)
         self.n_perception = n_perception
+        self.std_regular = self.std
+        self.last_success = []
 
         self.alpha = alpha
         self.beta = beta * (self.s2d.v_table.max()/self.get_jerk_reward(t_gold, y_gold))
+        self.succ_samples = succ_samples
+        self.h = h
 
     def __str__(self):
         return "N Basis: {}\nK:{}\nD:{}\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}".format(
@@ -79,15 +100,15 @@ class TrajectoryLearning(object):
             return initial * (1. - ((self.e - self.decay_episode) / (self.n_episode - self.decay_episode)))
         return initial
 
-    def update_std(self, episode):
-        for e in range(episode):
-            self.e += 1
-            self.std = self.decay_std(self.std_initial)
-
     def generate_episode(self):
-        print "STD:", self.std
+        if self.e == 1:
+            std = 0.0 # Don't explore at the first episode
+        else:
+            std = self.std
 
-        episode = self.dmp.generate_episode(self.std)
+        print "STD:", std
+
+        episode = self.dmp.generate_episode(std)
 
         return episode
 
@@ -135,12 +156,21 @@ class TrajectoryLearning(object):
             per_rew, jerk_rew = 0., 0.
             is_success = False
 
+        self.last_success.append(is_success)
+
+        if len(self.last_success) > self.succ_samples:
+            del self.last_success[0]  # Remove oldest
+
+        success_rate = float(sum(self.last_success))/len(self.last_success)
+
         reward = per_rew + jerk_rew
         print "\tTotal Reward:", reward
         print "\tIs successful:", is_success
+        print "\tSuccess rate:", success_rate
 
         self.dmp.update(reward)
         self.e += 1
-        self.std = self.decay_std(self.std_initial)
+
+        self.std = self.decay_std(self.std_initial) + sampling_fn(success_rate, 0., self.std_ub-self.std_initial, self.h)
 
         return per_rew, jerk_rew, is_success

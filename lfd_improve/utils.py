@@ -27,3 +27,6 @@ def align_trajectories(data, longest=True):
         data_warp += [d[path[1]][:data[ls].shape[0]]]
 
     return np.array(data_warp)
+
+def sampling_fn(r, lb, a, h):
+    return lb + a * (np.exp(-np.square(np.log(r+1e-10)/h)))
