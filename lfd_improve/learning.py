@@ -55,14 +55,15 @@ class TrajectoryLearning(object):
         else:
             self.goal_model = goal_model
 
-        if values is None:
-            qs2d_models = [QS2D(self.goal_model) for _ in range(50)]
-            qs2d_models = sorted(qs2d_models, key=lambda x: x.val_var, reverse=True)
-            self.s2d = qs2d_models[0]
-        else:
-            self.s2d = QS2D(self.goal_model, values=values)
+        if not is_sparse:
+            if values is None:
+                qs2d_models = [QS2D(self.goal_model, n_episode=100) for _ in range(10)]
+                qs2d_models = sorted(qs2d_models, key=lambda x: x.val_var, reverse=True)
+                self.s2d = qs2d_models[0]
+            else:
+                self.s2d = QS2D(self.goal_model, values=values)
 
-        print self.s2d.v_table
+            print self.s2d.v_table
 
         self.delta = np.diff(self.demo.times).mean()
         print "Delta:", self.delta
@@ -82,7 +83,7 @@ class TrajectoryLearning(object):
         self.last_success = []
 
         self.alpha = alpha
-        self.beta = beta * (self.s2d.v_table.max()/self.get_jerk_reward(t_gold, y_gold))
+        self.beta = beta * (1.0/self.get_jerk_reward(t_gold, y_gold))
         self.succ_samples = succ_samples
         self.h = h
 

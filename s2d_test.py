@@ -9,13 +9,15 @@ train_per = [p[1] for p in pickle.load(open('/home/ceteke/Desktop/sim_demos_clos
 pca = PCA(n_components=8)
 train_per = pca.fit_transform(train_per)
 
-goal_model = HMMGoalModel(train_per)
+goal_model = HMMGoalModel(train_per.reshape(1,-1,8))
 
 qs2d_models = [QS2D(goal_model, n_episode=100) for _ in range(10)]
-qs2d_models = sorted(qs2d_models, key=lambda x: x.val_var)
-qs2d_models = sorted(qs2d_models, key=lambda x: x.reward_diff, reverse=True)
+qs2d_models = sorted(qs2d_models, key=lambda x: x.val_var, reverse=True)
 
 qs2d = qs2d_models[0]
+print qs2d.v_table
+succ_idx = np.argmax(qs2d.v_table)
+print goal_model.hmm.transmat_[:,succ_idx]
 
 fail_close = pickle.load(open('/home/ceteke/Desktop/rewad_learning_data/fail_close.pk', 'rb'))
 fail_rewards = []

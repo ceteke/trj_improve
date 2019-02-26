@@ -34,7 +34,7 @@ class Sparse2Dense(object):
 
 
 class QS2D(object):
-    def __init__(self, goal_model, n_episode=10, gamma=0.9, values=None):
+    def __init__(self, goal_model, n_episode=100, gamma=0.9, values=None):
         self.goal_model = goal_model
         self.gamma = gamma
         self.v_table = np.zeros(self.goal_model.n_components) - 1
