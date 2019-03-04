@@ -10,8 +10,8 @@ class Experiment(object):
         self.episode_dirs = sorted(self.episode_dirs,
                                    key=lambda x: int(os.path.basename(os.path.normpath(x))))
 
-        self.perception_rewards, self.jerk_rewards, self.successes, self.variances = self.get_rewards(self.episode_dirs)
-        self.total_rewards = self.perception_rewards + self.jerk_rewards
+        #self.perception_rewards, self.jerk_rewards, self.successes, self.variances = self.get_rewards(self.episode_dirs)
+        #self.total_rewards = self.perception_rewards + self.jerk_rewards
 
         self.greedy_dirs = list(
             map(lambda x: os.path.join(ex_dir, x),
@@ -21,8 +21,8 @@ class Experiment(object):
 
         self.perception_rewards_greedy, self.jerk_rewards_greedy, self.successes_greedy, _ = self.get_rewards(self.greedy_dirs)
 
-        self.weights = np.array([np.loadtxt(os.path.join(e, 'dmp.csv'),
-                                            delimiter=',') for e in [self.ex_dir] + self.episode_dirs])
+        #self.weights = np.array([np.loadtxt(os.path.join(e, 'dmp.csv'),
+        #                                    delimiter=',') for e in [self.ex_dir] + self.episode_dirs])
 
     def get_rewards(self, dirs):
         jerk_rewards = np.zeros(len(dirs))

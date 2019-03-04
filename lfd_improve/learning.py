@@ -1,4 +1,4 @@
-from dmp.rl import DMPPower
+from dmp.rl import DMPPower, DMPCMA
 from data import Demonstration
 from sparse2dense import QS2D
 from goal_model import HMMGoalModel
@@ -10,7 +10,7 @@ from utils import align_trajectories, sampling_fn
 
 class TrajectoryLearning(object):
     def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=.5,
-                 values=None, goal_model=None, goal_data=False, succ_samples=4, h=0.75):
+                 values=None, goal_model=None, goal_data=False, succ_samples=None, h=0.75, adaptive_covar=True):
         '''
         :param demo_dir: Demonstration directory
         :param n_basis: Number of DMP basis
@@ -28,7 +28,7 @@ class TrajectoryLearning(object):
         :param h: Adaptive exploration rate function parameter (See adaptive_exploration.py)
         '''
 
-        self.dmp = DMPPower(n_basis, K, n_sample)
+        self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample, std_init=30)
         self.demo = Demonstration(demo_dir)
         self.pca = PCA(n_components=n_perception)
 
@@ -75,7 +75,7 @@ class TrajectoryLearning(object):
 
         self.e = 1.
         self.std_ub = 65.
-        self.std = 40.
+        self.std = 50.
         self.std_initial = self.std
         self.decay_episode = float(self.n_episode // 4)
         self.n_perception = n_perception
@@ -84,13 +84,14 @@ class TrajectoryLearning(object):
 
         self.alpha = alpha
         self.beta = beta * (1.0/self.get_jerk_reward(t_gold, y_gold))
-        self.succ_samples = succ_samples
+        self.succ_samples = succ_samples if succ_samples else n_sample
         self.h = h
+        self.adaptive_covar = adaptive_covar
 
     def __str__(self):
-        return "N Basis: {}\nK:{}\nD:{}\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}".format(
+        return "N Basis:{}\nK:{}\nD:{}\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}\nAdaptive Covariance:{}".format(
             self.dmp.n_basis, self.dmp.K, self.dmp.D, self.alpha, self.beta, self.dmp.n_sample, self.n_episode, self.std_initial,
-            self.decay_episode, self.is_sparse
+            self.decay_episode, self.is_sparse, self.adaptive_covar
         )
 
     def save_goal_model(self, dir):
@@ -102,19 +103,15 @@ class TrajectoryLearning(object):
         return initial
 
     def generate_episode(self):
-        if self.e == 1:
-            std = 0.0 # Don't explore at the first episode
+        if self.adaptive_covar:
+            episode = self.dmp.generate_episode()
         else:
-            std = self.std
-
-        print "STD:", std
-
-        episode = self.dmp.generate_episode(std)
-
+            print "STD:", self.std
+            episode = self.dmp.generate_episode(self.std)
         return episode
 
     def remove_episode(self):
-        self.dmp.exp_ws = self.dmp.exp_ws[:-1]
+        self.dmp.remove_episode()
 
     def get_jerk_reward(self, t, x):
         episode_spliner = Spliner(t, x)
@@ -122,7 +119,7 @@ class TrajectoryLearning(object):
         total_jerk = np.linalg.norm(dddx_episode, axis=1).sum()
         return 1. / total_jerk
 
-    def get_reward(self, per_trj, jerk):
+    def get_reward(self, per_trj, jerk, ts, x):
         if per_trj.shape[-1] != self.n_perception:
             per_trj = self.pca.transform(per_trj)
 
@@ -134,7 +131,7 @@ class TrajectoryLearning(object):
             perception_reward = self.s2d.get_reward(per_trj)[-1]
 
         if jerk:
-            jerk_reward = self.get_jerk_reward(self.dmp.t_episode, self.dmp.x_episode)
+            jerk_reward = self.get_jerk_reward(ts, x)
         else:
             jerk_reward = 0.0
 
@@ -143,15 +140,18 @@ class TrajectoryLearning(object):
 
         print "\tJerk Reward:", jerk_reward
         print "\tPerception Reward:", perception_reward
+        reward = perception_reward + jerk_reward
+        print "\tTotal Reward:", reward
+        print "\tIs successful:", is_success
 
         return perception_reward, jerk_reward, is_success
 
-    def update(self, per_trj, jerk=True):
+    def update(self, per_trj, ts, x, jerk=True):
         if per_trj is not None:
             if per_trj.shape[-1] != self.n_perception:
                 per_trj = self.pca.transform(per_trj)
 
-            per_rew, jerk_rew, is_success = self.get_reward(per_trj, jerk)
+            per_rew, jerk_rew, is_success = self.get_reward(per_trj, jerk, ts, x)
 
         else:
             per_rew, jerk_rew = 0., 0.
@@ -166,14 +166,15 @@ class TrajectoryLearning(object):
         #fail_rate = 1.0 - success_rate
 
         reward = per_rew + jerk_rew
-        print "\tTotal Reward:", reward
-        print "\tIs successful:", is_success
         #print "\tSuccess rate:", success_rate
 
         self.dmp.update(reward)
+
         self.e += 1
-        exp_fac = sampling_fn(1-np.mean(self.last_success), 0., self.std_ub-self.std_initial, self.h)
-        print "EXP:", exp_fac
-        self.std = self.decay_std(self.std_initial) + exp_fac
+
+        if not self.adaptive_covar:
+            exp_fac = sampling_fn(1-np.mean(self.last_success), 0., self.std_ub-self.std_initial, self.h)
+            print "EXP:", exp_fac
+            self.std = self.decay_std(self.std_initial) + exp_fac
 
         return per_rew, jerk_rew, is_success

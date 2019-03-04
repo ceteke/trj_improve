@@ -3,6 +3,8 @@ from lfd_improve.experiment import Experiment
 from lfd_improve import learning
 from lfd_improve.utils import isPD, nearestPD
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+
 
 def P_r(k, K_e):
     beta = (1. + np.sum([np.log(i) for i in range(1,K_e+1)]))/float(K_e)
@@ -10,13 +12,29 @@ def P_r(k, K_e):
 
     return np.log(alpha*(K_e+1)) - np.log(k)
 
-ex = Experiment('/home/ceteke/Desktop/iros_demos/open/ex2')
+def plot_ellipse(pos, cov):
+    def eigsorted(cov):
+        vals, vecs = np.linalg.eigh(cov)
+        order = vals.argsort()[::-1]
+        return vals[order], vecs[:,order]
+
+    ax = plt.gca()
+
+    vals, vecs = eigsorted(cov)
+    theta = np.degrees(np.arctan2(*vecs[:,0][::-1]))
+
+    width, height = 4 * np.sqrt(vals)
+    ellip = mpl.patches.Ellipse(xy=pos, width=width, height=height, angle=theta, lw=1, fill=False, linestyle='solid')
+
+    ax.add_artist(ellip)
+
+ex = Experiment('/home/ceteke/Desktop/dmp_improve_demos/open/ex21')
 w_vars = np.diff(ex.weights, axis=0).mean(axis=-1)
 
-std = 5.
+std = 50.
 initial_std = std
 
-demo_dir = '/home/ceteke/Desktop/iros_demos/open/1'
+demo_dir = '/home/ceteke/Desktop/dmp_improve_demos/open/1'
 to = learning.TrajectoryLearning(demo_dir, 20, 100, 5, 20, True)
 to.dmp.w = ex.weights[0]
 ex.weights = ex.weights[1:]
@@ -28,11 +46,19 @@ K_e = 5
 
 w = copy.deepcopy(to.dmp.w)
 
-for e in range(20):
+for e in range(25):
+    # plt.clf()
+
     exp_w = np.zeros_like(w)
 
     for i in range(len(covs)):
-        exp_w[:,i] = np.random.multivariate_normal(w[:,i], np.square(std)*covs[i])
+        exp_w[:,i] = np.random.multivariate_normal(w[:,i], std*covs[i])
+
+    # plt.scatter(w[0, 0], w[1, 0])
+    # plot_ellipse(w[:2,0], covs[0][:2,:2])
+    # plt.ylim(-1000, 1000)
+    # plt.xlim(-1000, 1000)
+    # plt.show()
 
     exp_ws.append(exp_w)
     rews.append(ex.total_rewards[e])
@@ -51,10 +77,11 @@ for e in range(20):
             new_cov = np.zeros_like(covs[i])
             for k, e_idx in enumerate(elite_idxs):
                 diff = (exp_ws[e_idx][:,i]-w[:,i]).reshape(-1,1)
-                new_cov += P_r(k+1, len(elite_idxs)) * np.matmul(diff, diff.T)
+                new_cov += np.matmul(diff, diff.T)
             #covs[i] = new_cov
             new_cov = nearestPD(new_cov) if not isPD(new_cov) else new_cov
             covs[i] = new_cov
+            assert isPD(new_cov)
             #print covs[i]
 
     _, x, _, _ = to.dmp.imitate(w)

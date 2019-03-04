@@ -6,11 +6,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 plot_greedy = True
-skill_dir = '/home/ceteke/Desktop/iros_demos/open'
+skill_dir = '/home/ceteke/Desktop/dmp_improve_demos/open'
 demo_dir = '{}/1'.format(skill_dir)
-# beta = 25.6513944222 # Open
+beta = 25.6513944222 # Open
 # beta = 50.9201079412 # Close
-beta = 29.0927312992
+# beta = 29.0927312992
 
 demo = Demonstration(demo_dir)
 spliner = Spliner(demo.times, demo.ee_poses)
@@ -18,14 +18,14 @@ _,_,_,_,dddx = spliner.get_motion
 
 baseline_jerk = beta  * get_jerk_reward(dddx)
 
-experiment_idxs = range(1,3)
+experiment_idxs = range(31,38)
 
 experiments = [Experiment('{}/ex{}'.format(skill_dir,e)) for e in experiment_idxs]
 perception_greedy_all = np.concatenate([ex.perception_rewards_greedy for ex in experiments])
 jerk_greedy_all = np.concatenate([ex.jerk_rewards_greedy for ex in experiments])
 
-np.savetxt('perception_all.csv', perception_greedy_all.reshape(len(experiment_idxs), -1), delimiter=',')
-np.savetxt('jerk_all.csv', jerk_greedy_all.reshape(len(experiment_idxs), -1), delimiter=',')
+#np.savetxt('perception_all.csv', perception_greedy_all.reshape(len(experiment_idxs), -1), delimiter=',')
+#np.savetxt('jerk_all.csv', jerk_greedy_all.reshape(len(experiment_idxs), -1), delimiter=',')
 
 n_episode = len(experiments[0].episode_dirs)
 n_greedy = len(experiments[0].greedy_dirs)
