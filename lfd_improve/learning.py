@@ -28,7 +28,7 @@ class TrajectoryLearning(object):
         :param h: Adaptive exploration rate function parameter (See adaptive_exploration.py)
         '''
 
-        self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample, std_init=30)
+        self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample, std_init=50)
         self.demo = Demonstration(demo_dir)
         self.pca = PCA(n_components=n_perception)
 
@@ -168,13 +168,13 @@ class TrajectoryLearning(object):
         reward = per_rew + jerk_rew
         #print "\tSuccess rate:", success_rate
 
-        self.dmp.update(reward)
+        if self.dmp.update(reward):
 
-        self.e += 1
+            self.e += 1
 
-        if not self.adaptive_covar:
-            exp_fac = sampling_fn(1-np.mean(self.last_success), 0., self.std_ub-self.std_initial, self.h)
-            print "EXP:", exp_fac
-            self.std = self.decay_std(self.std_initial) + exp_fac
+            if not self.adaptive_covar:
+                exp_fac = sampling_fn(1-np.mean(self.last_success), 0., self.std_ub-self.std_initial, self.h)
+                print "EXP:", exp_fac
+                self.std = self.decay_std(self.std_initial) + exp_fac
 
         return per_rew, jerk_rew, is_success

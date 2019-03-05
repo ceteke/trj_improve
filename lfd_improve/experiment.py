@@ -2,7 +2,7 @@ import os, numpy as np
 
 
 class Experiment(object):
-    def __init__(self, ex_dir):
+    def __init__(self, ex_dir, freq=None):
         self.ex_dir = ex_dir
         self.episode_dirs = list(
             map(lambda x: os.path.join(ex_dir, x),
@@ -18,6 +18,10 @@ class Experiment(object):
                 filter(lambda x: 'greedy' in x, os.listdir(self.ex_dir))))
         self.greedy_dirs = sorted(self.greedy_dirs,
                                   key=lambda x: int(x.split('_')[-1]))
+
+        if freq:
+            idxs = np.arange(0, len(self.greedy_dirs), freq, dtype=np.int)
+            self.greedy_dirs = np.array(self.greedy_dirs)[idxs]
 
         self.perception_rewards_greedy, self.jerk_rewards_greedy, self.successes_greedy, _ = self.get_rewards(self.greedy_dirs)
 

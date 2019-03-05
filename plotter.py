@@ -18,45 +18,54 @@ _,_,_,_,dddx = spliner.get_motion
 
 baseline_jerk = beta  * get_jerk_reward(dddx)
 
-experiment_idxs = range(31,38)
+experiment_names = {
+    'PoWER Sparse': range(11,21),
+    'PoWER Dense': range(1,11),
+    'CMA': range(21,31)
+}
 
-experiments = [Experiment('{}/ex{}'.format(skill_dir,e)) for e in experiment_idxs]
-perception_greedy_all = np.concatenate([ex.perception_rewards_greedy for ex in experiments])
-jerk_greedy_all = np.concatenate([ex.jerk_rewards_greedy for ex in experiments])
+for experiment_name, experiment_idxs in experiment_names.items():
+    freq = 2 if experiment_name=='CMA' else None
+    experiments = [Experiment('{}/ex{}'.format(skill_dir,e), freq=freq) for e in experiment_idxs]
+    perception_greedy_all = np.concatenate([ex.perception_rewards_greedy for ex in experiments])
+    jerk_greedy_all = np.concatenate([ex.jerk_rewards_greedy for ex in experiments])
 
-#np.savetxt('perception_all.csv', perception_greedy_all.reshape(len(experiment_idxs), -1), delimiter=',')
-#np.savetxt('jerk_all.csv', jerk_greedy_all.reshape(len(experiment_idxs), -1), delimiter=',')
+    #np.savetxt('perception_all.csv', perception_greedy_all.reshape(len(experiment_idxs), -1), delimiter=',')
+    #np.savetxt('jerk_all.csv', jerk_greedy_all.reshape(len(experiment_idxs), -1), delimiter=',')
 
-n_episode = len(experiments[0].episode_dirs)
-n_greedy = len(experiments[0].greedy_dirs)
+    n_episode = len(experiments[0].episode_dirs)
+    n_greedy = len(experiments[0].greedy_dirs)
 
-N = n_greedy if plot_greedy else n_episode
+    N = n_greedy if plot_greedy else n_episode
 
-perception_rewards = np.zeros((len(experiments), N))
-jerk_rewards = np.zeros((len(experiments), N))
-total_rewards = np.zeros((len(experiments), N))
+    perception_rewards = np.zeros((len(experiments), N))
+    jerk_rewards = np.zeros((len(experiments), N))
+    total_rewards = np.zeros((len(experiments), N))
 
-for i, exp in enumerate(experiments):
-    perception_rewards[i] = exp.perception_rewards_greedy
-    jerk_rewards[i] = exp.jerk_rewards_greedy
+    for i, exp in enumerate(experiments):
+        perception_rewards[i] = exp.perception_rewards_greedy
+        jerk_rewards[i] = exp.jerk_rewards_greedy
 
-total_rewards = perception_rewards + jerk_rewards
+    total_rewards = perception_rewards + jerk_rewards
 
-total_std = total_rewards.var(axis=0)
-perception_std = perception_rewards.var(axis=0)
-jerk_std = jerk_rewards.var(axis=0)
+    total_std = total_rewards.var(axis=0)
+    perception_std = perception_rewards.var(axis=0)
+    jerk_std = jerk_rewards.var(axis=0)
 
-total_mean = total_rewards.mean(axis=0)
-perception_mean = perception_rewards.mean(axis=0)
-jerk_mean = jerk_rewards.mean(axis=0)
+    total_mean = total_rewards.mean(axis=0)
+    first_reward = total_mean[0]
+    perception_mean = perception_rewards.mean(axis=0)
+    jerk_mean = jerk_rewards.mean(axis=0)
 
-plt.plot(total_mean, label='Total Reward')
-plt.fill_between(range(N), total_mean-total_std, total_mean+total_std, alpha=0.5)
-plt.plot(perception_mean, label='Perception Reward')
-plt.fill_between(range(N), perception_mean-perception_std, perception_mean+perception_std, alpha=0.5)
-plt.plot(jerk_mean, label='Jerk Reward')
-plt.fill_between(range(N), jerk_mean-jerk_std, jerk_mean+jerk_std, alpha=0.5)
-plt.axhline(baseline_jerk, label='Jerk Baseline', linestyle='--', c='black')
+    plt.plot(total_mean, label=experiment_name)
+    plt.fill_between(range(N), total_mean-total_std, total_mean+total_std, alpha=0.2)
+    #plt.plot(perception_mean, label='Perception Reward')
+    #plt.fill_between(range(N), perception_mean-perception_std, perception_mean+perception_std, alpha=0.5)
+    #plt.plot(jerk_mean, label='Jerk Reward')
+    #plt.fill_between(range(N), jerk_mean-jerk_std, jerk_mean+jerk_std, alpha=0.5)
+    #plt.axhline(baseline_jerk, label='Jerk Baseline', linestyle='--', c='black')
+
+plt.title("Total Reward vs. n^th Greedy")
 plt.legend()
 plt.show()
 
