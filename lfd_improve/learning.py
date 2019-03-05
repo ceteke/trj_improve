@@ -7,13 +7,17 @@ from sklearn.decomposition import PCA
 from spliner import Spliner
 import os
 from utils import align_trajectories, sampling_fn
+from gmm_gmr.rl import GMMCMA
+import copy
+
 
 class TrajectoryLearning(object):
     def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=.5,
-                 values=None, goal_model=None, goal_data=False, succ_samples=None, h=0.75, adaptive_covar=True):
+                 values=None, goal_model=None, goal_data=False, succ_samples=None, h=0.75, adaptive_covar=True,
+                 model='dmp'):
         '''
         :param demo_dir: Demonstration directory
-        :param n_basis: Number of DMP basis
+        :param n_basis: Number of DMP basis / GMM Components
         :param K: DMP Spring constant
         :param n_sample: Number of samples for PoWER update
         :param n_episode: Number of episodes
@@ -27,10 +31,9 @@ class TrajectoryLearning(object):
         :param succ_samples: Number of samples to calculate success rate for adaptive exploration rate
         :param h: Adaptive exploration rate function parameter (See adaptive_exploration.py)
         '''
-
-        self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample, std_init=50)
         self.demo = Demonstration(demo_dir)
         self.pca = PCA(n_components=n_perception)
+        self.model = model
 
         if goal_data:
             goal_data_dir = os.path.join(demo_dir, '..', 'goal_demos')
@@ -71,11 +74,19 @@ class TrajectoryLearning(object):
         self.spliner = Spliner(self.demo.times, self.demo.ee_poses)
         t_gold, y_gold, yd_gold, ydd_gold, yddd_gold = self.spliner.get_motion
 
-        self.dmp.fit(t_gold, y_gold, yd_gold, ydd_gold)
+        if str.lower(model) == 'dmp':
+            self.std = 50
+            self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample, std_init=self.std)
+            self.dmp.fit(t_gold, y_gold, yd_gold, ydd_gold)
+        elif str.lower(model) == 'gmm':
+            self.std = 0.5
+            self.dmp = GMMCMA(np.array([y_gold]), self.std, n_sample, t_gold, n_clusters=n_basis)
+            self.dmp = copy.deepcopy(self.dmp)
+        else:
+            raise ValueError("Unkown model type use dmp or gmm")
 
         self.e = 1.
         self.std_ub = 65.
-        self.std = 50.
         self.std_initial = self.std
         self.decay_episode = float(self.n_episode // 4)
         self.n_perception = n_perception
@@ -87,12 +98,22 @@ class TrajectoryLearning(object):
         self.succ_samples = succ_samples if succ_samples else n_sample
         self.h = h
         self.adaptive_covar = adaptive_covar
+        self.n_basis = n_basis
 
     def __str__(self):
-        return "N Basis:{}\nK:{}\nD:{}\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}\nAdaptive Covariance:{}".format(
-            self.dmp.n_basis, self.dmp.K, self.dmp.D, self.alpha, self.beta, self.dmp.n_sample, self.n_episode, self.std_initial,
-            self.decay_episode, self.is_sparse, self.adaptive_covar
-        )
+
+        if self.model == 'dmp':
+            info = "N Basis:{}\nK:{}\nD:{}\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}\nAdaptive Covariance:{}\nModel{}".format(
+                self.n_basis, self.dmp.K, self.dmp.D, self.alpha, self.beta, self.dmp.n_sample, self.n_episode, self.std_initial,
+                self.decay_episode, self.is_sparse, self.adaptive_covar, self.model
+            )
+        else:
+            info = "N Clusters:{}\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}\nAdaptive Covariance:{}\nModel{}".format(
+                self.n_basis, self.alpha, self.beta, self.dmp.n_sample, self.n_episode, self.std_initial,
+                self.decay_episode, self.is_sparse, self.adaptive_covar, self.model
+            )
+
+        return info
 
     def save_goal_model(self, dir):
         pickle.dump(self.goal_model, open(dir, 'wb'))
