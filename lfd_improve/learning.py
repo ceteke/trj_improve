@@ -12,7 +12,7 @@ import copy
 
 
 class TrajectoryLearning(object):
-    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=.5,
+    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=None,
                  values=None, goal_model=None, goal_data=False, succ_samples=None, h=0.75, adaptive_covar=True,
                  model='dmp'):
         '''
@@ -34,6 +34,8 @@ class TrajectoryLearning(object):
         self.demo = Demonstration(demo_dir)
         self.pca = PCA(n_components=n_perception)
         self.model = model
+        if beta is None:
+            beta = 0.5 if model=='dmp' else 0.25
 
         if goal_data:
             goal_data_dir = os.path.join(demo_dir, '..', 'goal_demos')
@@ -79,7 +81,7 @@ class TrajectoryLearning(object):
             self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample, std_init=self.std)
             self.dmp.fit(t_gold, y_gold, yd_gold, ydd_gold)
         elif str.lower(model) == 'gmm':
-            self.std = 0.5
+            self.std = 1.0
             self.dmp = GMMCMA(np.array([y_gold]), self.std, n_sample, t_gold, n_clusters=n_basis)
             self.dmp = copy.deepcopy(self.dmp)
         else:
