@@ -23,6 +23,7 @@ class Experiment(object):
             idxs = np.arange(0, len(self.greedy_dirs), freq, dtype=np.int)
             self.greedy_dirs = np.array(self.greedy_dirs)[idxs]
 
+
         self.perception_rewards_greedy, self.jerk_rewards_greedy, self.successes_greedy, _ = self.get_rewards(self.greedy_dirs)
 
         #self.weights = np.array([np.loadtxt(os.path.join(e, 'dmp.csv'),

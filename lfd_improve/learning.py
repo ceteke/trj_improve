@@ -80,10 +80,12 @@ class TrajectoryLearning(object):
             self.std = 50
             self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample, std_init=self.std)
             self.dmp.fit(t_gold, y_gold, yd_gold, ydd_gold)
+            t_imitate, x_imitate, _, _ = self.dmp.imitate()
         elif str.lower(model) == 'gmm':
             self.std = 1.0
             self.dmp = GMMCMA(np.array([y_gold]), self.std, n_sample, t_gold, n_clusters=n_basis)
             self.dmp = copy.deepcopy(self.dmp)
+            t_imitate, x_imitate = self.dmp.imitate()
         else:
             raise ValueError("Unkown model type use dmp or gmm")
 
@@ -96,7 +98,7 @@ class TrajectoryLearning(object):
         self.last_success = []
 
         self.alpha = alpha
-        self.beta = beta * (1.0/self.get_jerk_reward(t_gold, y_gold))
+        self.beta = beta * (1.0/self.get_jerk_reward(t_imitate, x_imitate))
         self.succ_samples = succ_samples if succ_samples else n_sample
         self.h = h
         self.adaptive_covar = adaptive_covar

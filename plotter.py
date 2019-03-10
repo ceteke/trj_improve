@@ -6,10 +6,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 plot_greedy = True
-skill_dir = '/home/ceteke/Desktop/dmp_improve_demos/close'
+skill_dir = '/home/ceteke/Desktop/dmp_improve_demos/open'
 demo_dir = '{}/1'.format(skill_dir)
-#beta = 25.6513944222 # Open
-beta = 50.9201079412 # Close
+beta = 25.6513944222 # Open
+#beta = 50.9201079412 # Close
 # beta = 29.0927312992
 
 demo = Demonstration(demo_dir)
@@ -21,8 +21,8 @@ baseline_jerk = beta  * get_jerk_reward(dddx)
 experiment_names = {
     'PoWER Sparse': range(11,21),
     'PoWER Dense': range(1,11),
-    'CMA GMM': range(21,31),
-    #'CMA DMP': range(21,31)
+    'CMA DMP': range(21,31),
+    #'CMA GMM': range(31,40)
 }
 
 for experiment_name, experiment_idxs in experiment_names.items():
@@ -46,8 +46,8 @@ for experiment_name, experiment_idxs in experiment_names.items():
     for i, exp in enumerate(experiments):
         perception_rewards[i] = exp.perception_rewards_greedy
         jerk_rewards[i] = exp.jerk_rewards_greedy
-        if 'GMM' in experiment_name:
-            jerk_rewards[i] *= 2
+        #if 'CMA' in experiment_name:
+        #    jerk_rewards[i] /= 2
 
     total_rewards = perception_rewards + jerk_rewards
 
