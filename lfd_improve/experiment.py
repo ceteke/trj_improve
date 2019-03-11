@@ -20,7 +20,7 @@ class Experiment(object):
                                   key=lambda x: int(x.split('_')[-1]))
 
         if freq:
-            idxs = np.arange(0, len(self.greedy_dirs), freq, dtype=np.int)
+            idxs = np.arange(0, len(self.greedy_dirs), freq)
             self.greedy_dirs = np.array(self.greedy_dirs)[idxs]
 
 

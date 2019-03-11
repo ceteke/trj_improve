@@ -12,7 +12,7 @@ import copy
 
 
 class TrajectoryLearning(object):
-    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=None,
+    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.5,
                  values=None, goal_model=None, goal_data=False, succ_samples=None, h=0.75, adaptive_covar=True,
                  model='dmp'):
         '''
@@ -34,8 +34,6 @@ class TrajectoryLearning(object):
         self.demo = Demonstration(demo_dir)
         self.pca = PCA(n_components=n_perception)
         self.model = model
-        if beta is None:
-            beta = 0.5 if model=='dmp' else 0.25
 
         if goal_data:
             goal_data_dir = os.path.join(demo_dir, '..', 'goal_demos')
@@ -77,7 +75,7 @@ class TrajectoryLearning(object):
         t_gold, y_gold, yd_gold, ydd_gold, yddd_gold = self.spliner.get_motion
 
         if str.lower(model) == 'dmp':
-            self.std = 50
+            self.std = 65 if not adaptive_covar else 35
             self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample, std_init=self.std)
             self.dmp.fit(t_gold, y_gold, yd_gold, ydd_gold)
             t_imitate, x_imitate, _, _ = self.dmp.imitate()
@@ -85,7 +83,7 @@ class TrajectoryLearning(object):
             self.std = 1.0
             self.dmp = GMMCMA(np.array([y_gold]), self.std, n_sample, t_gold, n_clusters=n_basis)
             self.dmp = copy.deepcopy(self.dmp)
-            t_imitate, x_imitate = self.dmp.imitate()
+            t_imitate, x_imitate = self.dmp.generate_trajectory()
         else:
             raise ValueError("Unkown model type use dmp or gmm")
 
@@ -198,8 +196,8 @@ class TrajectoryLearning(object):
             self.e += 1
 
             if not self.adaptive_covar:
-                exp_fac = sampling_fn(1-np.mean(self.last_success), 0., self.std_ub-self.std_initial, self.h)
-                print "EXP:", exp_fac
-                self.std = self.decay_std(self.std_initial) + exp_fac
+                #exp_fac = sampling_fn(1-np.mean(self.last_success), 0., self.std_ub-self.std_initial, self.h)
+                #print "EXP:", exp_fac
+                self.std = self.decay_std(self.std_initial)# + exp_fac
 
         return per_rew, jerk_rew, is_success
