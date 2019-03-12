@@ -1,6 +1,8 @@
 import numpy as np
 from dtw import dtw
-from numpy import linalg as la
+from scipy.stats import multivariate_normal
+import cvxpy as cp
+import scipy.optimize
 
 
 def pdf_multivariate(x, mu, cov):
@@ -31,6 +33,17 @@ def align_trajectories(data, longest=True):
 
 def sampling_fn(r, lb, a, h):
     return lb + a * (np.exp(-np.square(np.log(r+1e-10)/h)))
+
+def normal_overlap(m1, c1, m2, c2):
+    sigm = (c1 + c2)/2.
+
+    bhatt_dist = 0.125 * np.matmul(np.matmul((m1-m2).T,
+                                   np.linalg.inv(sigm)),
+                                   m1-m2)
+    bhatt_dist += 0.5 * np.log(np.linalg.det(sigm)/np.sqrt(np.linalg.det(c1) * np.linalg.det(c2)))
+
+    return bhatt_dist
+
 
 def nearestPD(A):
     """Find the nearest positive-definite matrix to input

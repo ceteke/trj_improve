@@ -17,9 +17,9 @@ baseline_jerk = 0.5
 
 experiment_names = {
     #'PoWER Sparse': range(53,63),
-    'PoWER Dense': range(63,73),
+    #'PoWER Dense': range(63,73),
     'CMA DMP': range(73,83),
-    #'CMA GMM': range(83,93)
+    'CMA GMM': range(83,93)
 }
 
 for experiment_name, experiment_idxs in experiment_names.items():
@@ -59,10 +59,10 @@ for experiment_name, experiment_idxs in experiment_names.items():
 
     #plt.plot(total_mean, label=experiment_name)
     #plt.fill_between(range(N), total_mean-total_std, total_mean+total_std, alpha=0.2)
-    #plt.plot(perception_mean, label=experiment_name)
-    #plt.fill_between(range(N), perception_mean-perception_std, perception_mean+perception_std, alpha=0.2)
-    plt.plot(jerk_mean, label=experiment_name)
-    plt.fill_between(range(N), jerk_mean-jerk_std, jerk_mean+jerk_std, alpha=0.2)
+    plt.plot(perception_mean, label=experiment_name)
+    plt.fill_between(range(N), perception_mean-perception_std, perception_mean+perception_std, alpha=0.2)
+    #plt.plot(jerk_mean, label=experiment_name)
+    #plt.fill_between(range(N), jerk_mean-jerk_std, jerk_mean+jerk_std, alpha=0.2)
 #plt.axhline(baseline_jerk, label='Jerk Baseline', linestyle='--', c='black')
 plt.title("Jerk Reward vs. n^th Greedy")
 plt.legend()
