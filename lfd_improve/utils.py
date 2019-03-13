@@ -34,15 +34,27 @@ def align_trajectories(data, longest=True):
 def sampling_fn(r, lb, a, h):
     return lb + a * (np.exp(-np.square(np.log(r+1e-10)/h)))
 
-def normal_overlap(m1, c1, m2, c2):
-    sigm = (c1 + c2)/2.
+def center_distance(m1, m2, a=0.5, b=0.5):
+    m1_euc = m1[:3]
+    m2_euc = m2[:3]
+    m1_quat = m1[3:]
+    m2_quat = m2[3:]
 
-    bhatt_dist = 0.125 * np.matmul(np.matmul((m1-m2).T,
-                                   np.linalg.inv(sigm)),
-                                   m1-m2)
-    bhatt_dist += 0.5 * np.log(np.linalg.det(sigm)/np.sqrt(np.linalg.det(c1) * np.linalg.det(c2)))
+    euc_dist = np.linalg.norm(m1_euc-m2_euc)
 
-    return bhatt_dist
+    if np.linalg.norm(m1_quat) != 1:
+        m1_quat /= np.linalg.norm(m1_quat)
+
+    if np.linalg.norm(m2_quat) != 1:
+        m2_quat /= np.linalg.norm(m2_quat)
+
+    min_theta = 1-m1_quat.dot(m2_quat)**2
+
+    if euc_dist < 1e-8: euc_dist = 0.0
+    if min_theta < 1e-8: min_theta = 0.0
+
+    return a*euc_dist + b*min_theta
+
 
 
 def nearestPD(A):

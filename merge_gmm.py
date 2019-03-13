@@ -5,7 +5,7 @@ import matplotlib as mpl
 from random import shuffle
 from gmm_gmr.mixtures import GMM_GMR
 from lfd_improve.data import Demonstration
-from lfd_improve.utils import normal_overlap
+from lfd_improve.utils import center_distance
 import matplotlib.patches as mpatches
 
 
@@ -79,7 +79,7 @@ for e in range(1, n_episode+1):
 
     for i in range(n_center):
         for j in range(n_center):
-            overlaps[i,j] = normal_overlap(centers[i,1:], covars[i,1:,1:], centers[j,1:], covars[j,1:,1:])
+            overlaps[i,j] = center_distance(centers[i,1:], centers[j,1:])
 
     for row in range(n_row):
         for col in range(n_col):
