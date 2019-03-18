@@ -20,11 +20,11 @@ experiment_names = {
     #'PoWER Dense': range(63,73),
     #'CMA DMP': range(73,83),
     'CMA GMM': range(83,93),
-    'CMA GMM Merge': range(96,106)
+    'CMA GMM Merge': range(115,124)
 }
 
 for experiment_name, experiment_idxs in experiment_names.items():
-    freq = 6 if 'CMA' in experiment_name else None
+    freq = 11 if 'CMA' in experiment_name else None
     experiments = [Experiment('{}/ex{}'.format(skill_dir,e), freq=freq) for e in experiment_idxs]
     perception_greedy_all = np.concatenate([ex.perception_rewards_greedy for ex in experiments])
     jerk_greedy_all = np.concatenate([ex.jerk_rewards_greedy for ex in experiments])
@@ -60,10 +60,10 @@ for experiment_name, experiment_idxs in experiment_names.items():
 
     #plt.plot(total_mean, label=experiment_name)
     #plt.fill_between(range(N), total_mean-total_std, total_mean+total_std, alpha=0.2)
-    #plt.plot(perception_mean, label=experiment_name)
-    #plt.fill_between(range(N), perception_mean-perception_std, perception_mean+perception_std, alpha=0.1)
-    plt.plot(jerk_mean, label=experiment_name)
-    plt.fill_between(range(N), jerk_mean-jerk_std, jerk_mean+jerk_std, alpha=0.1)
+    plt.plot(perception_mean, label=experiment_name)
+    plt.fill_between(range(N), perception_mean-perception_std, perception_mean+perception_std, alpha=0.1)
+    #plt.plot(jerk_mean, label=experiment_name)
+    #plt.fill_between(range(N), jerk_mean-jerk_std, jerk_mean+jerk_std, alpha=0.1)
 plt.axhline(baseline_jerk, label='Jerk Baseline', linestyle='--', c='black')
 plt.title("Total Reward vs. n^th Greedy")
 plt.legend()

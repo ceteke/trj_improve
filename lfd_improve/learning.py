@@ -12,7 +12,7 @@ import copy
 
 
 class TrajectoryLearning(object):
-    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.5,
+    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.25,
                  values=None, goal_model=None, goal_data=False, succ_samples=None, h=0.75, adaptive_covar=True,
                  model='dmp'):
         '''
@@ -92,7 +92,7 @@ class TrajectoryLearning(object):
             min_idx = np.argmin(bics)
             gmm = gmms[min_idx]
             self.dmp = copy.deepcopy(gmm)
-            print "GMM with {} Clusters selected BIC: {}", gmm.n_clusters, bics[min_idx]
+            print "GMM with {} Clusters selected BIC: {}".format(gmm.n_clusters, bics[min_idx])
             t_imitate, x_imitate = self.dmp.generate_trajectory()
 
         else:
