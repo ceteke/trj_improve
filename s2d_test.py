@@ -4,6 +4,11 @@ from lfd_improve.sparse2dense import QS2D
 import matplotlib.pyplot as plt
 import pickle, numpy as np
 from sklearn.decomposition import PCA
+from lfd_improve.data import MultiDemonstration
+
+md = MultiDemonstration('/home/ceteke/Desktop/sim_demos')
+exit()
+
 
 train_per = [p[1] for p in pickle.load(open('/home/ceteke/Desktop/sim_demos_close/1/pcae.pk', 'rb'))]
 pca = PCA(n_components=8)

@@ -1,9 +1,23 @@
 import numpy as np
 from dtw import dtw
-from scipy.stats import multivariate_normal
-import cvxpy as cp
-import scipy.optimize
 
+
+def update_gmm(gmm, centers, covars, weights):
+    gmm.means_ = centers
+    gmm.covariances_ = covars
+    gmm.weights_ = weights
+    gmm.n_components = len(centers)
+    gmm.precisions_ = np.zeros_like(gmm.covariances_)
+    gmm.precisions_cholesky_ = np.zeros_like(gmm.covariances_)
+
+    for i in range(gmm.n_components):
+        gmm.precisions_[i] = np.linalg.inv(gmm.covariances_[i])
+        try:
+            gmm.precisions_cholesky_[i] = np.linalg.cholesky(gmm.precisions_[i])
+        except np.linalg.LinAlgError:
+            gmm.precisions_cholesky_[i] = np.linalg.cholesky(
+                nearestPD(gmm.precisions_[i])
+            )
 
 def pdf_multivariate(x, mu, cov):
     part1 = 1 / (((2 * np.pi) ** (len(mu) / 2)) * (np.linalg.det(cov) ** (1 / 2)))

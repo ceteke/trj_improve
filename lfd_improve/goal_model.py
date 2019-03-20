@@ -7,35 +7,31 @@ from utils import pdf_multivariate
 
 
 class HMMGoalModel(object):
-    def __init__(self, per_data):
+    def __init__(self, per_data, per_lens=None):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         warnings.filterwarnings("ignore", category=RuntimeWarning)
 
         components = [2,4,6,8,10]
-        n_demos, n_points, self.n_dims = per_data.shape
 
         hmms = [GaussianHMM(n_components=c) for c in components]
-
-        per_data = per_data.reshape(-1,self.n_dims)
-        per_lens = [n_points]*n_demos
 
         map(lambda g: g.fit(per_data, per_lens), hmms)
         scores = map(lambda g: g.score(per_data, per_lens), hmms)
 
         max_score, self.hmm = sorted(zip(scores, hmms))[-1]
         print "Goal HMM n_components", self.hmm.n_components
-        self.final_states = np.array(self.hmm.predict(per_data, per_lens)).reshape(-1,n_points)[:,-1]
+        self.final_states = np.array(self.hmm.predict(per_data, per_lens))[np.array(per_lens)-1]
 
         self.n_components = self.hmm.n_components
-        self.beliefs = np.zeros((n_points+1,  self.n_components))
-        self.beliefs[0] = self.hmm.startprob_
+        #self.beliefs = np.zeros((n_points+1,  self.n_components))
+        #self.beliefs[0] = self.hmm.startprob_
 
-        for i in range( self.n_components):
-            for t in range(1, n_points+1): # +1 since we have 0th time too
-                for j in range( self.n_components):
-                    self.beliefs[t, i] += self.beliefs[t-1, j] * self.hmm.transmat_[j, i]
+        #for i in range( self.n_components):
+        #    for t in range(1, n_points+1): # +1 since we have 0th time too
+        #        for j in range( self.n_components):
+        #            self.beliefs[t, i] += self.beliefs[t-1, j] * self.hmm.transmat_[j, i]
 
-        self.T = n_points
+        self.T = int(np.mean(per_lens))
 
     def align_state(self, seq):
 

@@ -1,5 +1,6 @@
 from dmp.rl import DMPPower, DMPCMA
-from data import Demonstration
+from dmp.imitation import ImitationDMP
+from data import MultiDemonstration
 from sparse2dense import QS2D
 from goal_model import HMMGoalModel
 import numpy as np, pickle
@@ -12,8 +13,8 @@ import copy
 
 
 class TrajectoryLearning(object):
-    def __init__(self, demo_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.25,
-                 values=None, goal_model=None, goal_data=False, succ_samples=None, h=0.75, adaptive_covar=True,
+    def __init__(self, data_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.5,
+                 values=None, goal_model=None, succ_samples=None, h=0.75, adaptive_covar=True,
                  model='dmp'):
         '''
         :param demo_dir: Demonstration directory
@@ -31,33 +32,30 @@ class TrajectoryLearning(object):
         :param succ_samples: Number of samples to calculate success rate for adaptive exploration rate
         :param h: Adaptive exploration rate function parameter (See adaptive_exploration.py)
         '''
-        self.demo = Demonstration(demo_dir)
+        if model == 'gmm':
+            raise ValueError('GMM Based trajectory learning is not supported yet.')
+
+        self.demo = MultiDemonstration(data_dir)
+        self.n_demo = len(self.demo.demos)
         self.pca = PCA(n_components=n_perception)
         self.model = model
+        self.n_basis = n_basis
 
-        if goal_data:
-            goal_data_dir = os.path.join(demo_dir, '..', 'goal_demos')
-            per_data = []
+        per_lens = list(map(lambda d: len(d.per_feats), self.demo.demos))
+        per_feats = np.concatenate([d.per_feats for d in self.demo.demos])
 
-            for pk in os.listdir(goal_data_dir):
-                pk = os.path.join(goal_data_dir, pk)
-                per_data.append([p[1] for p in pickle.load(open(pk, 'rb'))][1:])
-
-            per_data = align_trajectories(per_data)
-            N, T, D = per_data.shape
-            per_data = self.pca.fit_transform(per_data.reshape(-1, D)).reshape(N, T, -1)
-        else:
-            per_data = self.pca.fit_transform(self.demo.per_feats).reshape(1, len(self.demo.per_feats), -1)
+        per_data = self.pca.fit_transform(per_feats)
 
         print "Perception PCA Exp. Var:", np.sum(self.pca.explained_variance_ratio_)
         self.n_episode = n_episode
         self.is_sparse = is_sparse
 
         if goal_model is None:
-            self.goal_model = HMMGoalModel(per_data)
+            self.goal_model = HMMGoalModel(per_data, per_lens)
         else:
             self.goal_model = goal_model
 
+        print "Learning reward function..."
         if not is_sparse:
             if values is None:
                 qs2d_models = [QS2D(self.goal_model, n_episode=100) for _ in range(10)]
@@ -68,16 +66,33 @@ class TrajectoryLearning(object):
 
             print self.s2d.v_table
 
-        self.delta = np.diff(self.demo.times).mean()
-        print "Delta:", self.delta
+        dynamics_gold = ([], [], [], [], [])
 
-        self.spliner = Spliner(self.demo.times, self.demo.ee_poses)
-        t_gold, y_gold, yd_gold, ydd_gold, yddd_gold = self.spliner.get_motion
+        print "Forming demonstration data..."
+        for d in self.demo.demos:
+            spliner = Spliner(d.times, d.ee_poses)
+            dynamics_demo = spliner.get_motion
+            for i, dyn in enumerate(dynamics_demo):
+                dynamics_gold[i].append(dyn)
+
+        t_gold, x_gold, dx_gold, ddx_gold, dddx_gold = dynamics_gold
 
         if str.lower(model) == 'dmp':
-            self.std = 65 if not adaptive_covar else 35
-            self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample, std_init=self.std)
-            self.dmp.fit(t_gold, y_gold, yd_gold, ydd_gold)
+            self.std = 65 if not adaptive_covar else 0.33
+
+            weights = np.zeros((len(t_gold), 7, self.n_basis))
+            for d in range(len(t_gold)):
+                dmp_single = ImitationDMP(self.n_basis, K)
+                dmp_single.fit(t_gold[d], x_gold[d], dx_gold[d], ddx_gold[d])
+                weights[d] = dmp_single.w
+
+            mean_w = np.mean(weights, axis=0)
+            cov_w = np.cov(weights.reshape(7,-1))
+
+            self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample, std_init=self.std, init_cov=cov_w)
+            self.dmp.fit(t_gold[0], x_gold[0], dx_gold[0], ddx_gold[0])
+            self.dmp.w = copy.deepcopy(mean_w)
+
             t_imitate, x_imitate, _, _ = self.dmp.imitate()
         elif str.lower(model) == 'gmm':
             self.std = 1.0

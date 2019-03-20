@@ -58,7 +58,6 @@ time.sleep(0.5)
 
 for r in tqdm(range(n_run)):
     dmp = DMPPower(20,100,5)
-
     spliner = Spliner(times, ee_poses)
     times, y_gold, yd_gold, ydd_gold, yddd_gold = spliner.get_motion
 
