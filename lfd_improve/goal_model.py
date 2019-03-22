@@ -20,8 +20,14 @@ class HMMGoalModel(object):
 
         max_score, self.hmm = sorted(zip(scores, hmms))[-1]
         print "Goal HMM n_components", self.hmm.n_components
-        self.final_states = np.array(self.hmm.predict(per_data, per_lens))[np.array(per_lens)-1]
 
+        upper_idxs = [per_lens[0]-1]
+        start_idxs = [0]
+        for i in range(1, len(per_lens)):
+            upper_idxs.append(upper_idxs[i-1]+per_lens[i])
+            start_idxs.append(start_idxs[i-1]+per_lens[i-1])
+
+        self.final_states = np.array(self.hmm.predict(per_data, per_lens))[upper_idxs]
         self.n_components = self.hmm.n_components
         #self.beliefs = np.zeros((n_points+1,  self.n_components))
         #self.beliefs[0] = self.hmm.startprob_
@@ -30,7 +36,11 @@ class HMMGoalModel(object):
         #    for t in range(1, n_points+1): # +1 since we have 0th time too
         #        for j in range( self.n_components):
         #            self.beliefs[t, i] += self.beliefs[t-1, j] * self.hmm.transmat_[j, i]
-
+        success_lls = []
+        for i in range(len(upper_idxs)):
+            ll = self.hmm.score(per_data[start_idxs[i]:upper_idxs[i]+1])
+            success_lls.append(ll)
+        self.ll_base = np.mean(success_lls)
         self.T = int(np.mean(per_lens))
 
     def align_state(self, seq):
@@ -68,10 +78,13 @@ class HMMGoalModel(object):
         return pdf_multivariate(o_t, self.hmm.means_[i], self.hmm.covars_[i])
 
     def is_success(self, per_trj):
-        per_trj = np.array(per_trj)
-        states = self.hmm.predict(per_trj)
-        final_state = states[-1]
-        return final_state in self.final_states
+        if self.hmm.score(per_trj) <= self.ll_base:
+            return False
+        return True
+        # per_trj = np.array(per_trj)
+        # states = self.hmm.predict(per_trj)
+        # final_state = states[-1]
+        # return final_state in self.final_states
 
     def sample(self, n, pos=True, t=None):
         t = self.T if t is None else t

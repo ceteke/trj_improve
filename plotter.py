@@ -18,13 +18,13 @@ baseline_jerk = 0.5
 experiment_names = {
     #'PoWER Sparse': range(53,63),
     #'PoWER Dense': range(63,73),
-    #'CMA DMP': range(73,83),
+    'CMA DMP': range(73,83),
     'CMA GMM': range(83,93),
-    'CMA GMM Merge': range(115,124)
+    'CMA DMP v2': range(125,135)
 }
 
 for experiment_name, experiment_idxs in experiment_names.items():
-    freq = 11 if 'CMA' in experiment_name else None
+    freq = 6 if 'CMA' in experiment_name else None
     experiments = [Experiment('{}/ex{}'.format(skill_dir,e), freq=freq) for e in experiment_idxs]
     perception_greedy_all = np.concatenate([ex.perception_rewards_greedy for ex in experiments])
     jerk_greedy_all = np.concatenate([ex.jerk_rewards_greedy for ex in experiments])

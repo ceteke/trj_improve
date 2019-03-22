@@ -58,9 +58,7 @@ class TrajectoryLearning(object):
         print "Learning reward function..."
         if not is_sparse:
             if values is None:
-                qs2d_models = [QS2D(self.goal_model, n_episode=100) for _ in range(10)]
-                qs2d_models = sorted(qs2d_models, key=lambda x: x.val_var, reverse=True)
-                self.s2d = qs2d_models[0]
+                self.s2d = QS2D(self.goal_model)
             else:
                 self.s2d = QS2D(self.goal_model, values=values)
 
@@ -76,9 +74,11 @@ class TrajectoryLearning(object):
                 dynamics_gold[i].append(dyn)
 
         t_gold, x_gold, dx_gold, ddx_gold, dddx_gold = dynamics_gold
+        self.t_gold = t_gold
+        self.x_gold = x_gold
 
         if str.lower(model) == 'dmp':
-            self.std = 65 if not adaptive_covar else 0.33
+            self.std = 65 if not adaptive_covar else 0.2
 
             weights = np.zeros((len(t_gold), 7, self.n_basis))
             for d in range(len(t_gold)):
@@ -87,11 +87,13 @@ class TrajectoryLearning(object):
                 weights[d] = dmp_single.w
 
             mean_w = np.mean(weights, axis=0)
-            cov_w = np.cov(weights.reshape(7,-1))
+            cov_w = np.cov(weights.reshape(7,-1)) * 0.5
+            std_basis = np.sqrt(np.var(weights.reshape(-1,7), axis=1))
 
-            self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample, std_init=self.std, init_cov=cov_w)
-            self.dmp.fit(t_gold[0], x_gold[0], dx_gold[0], ddx_gold[0])
-            self.dmp.w = copy.deepcopy(mean_w)
+            self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample,
+                                                                                        std_init=std_basis*self.std)
+            rand_demo = np.random.randint(0, len(t_gold))
+            self.dmp.fit(t_gold[rand_demo], x_gold[rand_demo], dx_gold[rand_demo], ddx_gold[rand_demo])
 
             t_imitate, x_imitate, _, _ = self.dmp.imitate()
         elif str.lower(model) == 'gmm':
@@ -123,6 +125,8 @@ class TrajectoryLearning(object):
 
         self.alpha = alpha
         self.beta = beta * (1.0/self.get_jerk_reward(t_imitate, x_imitate))
+        self.t_imitate = t_imitate
+        self.x_imitate = x_imitate
         self.succ_samples = succ_samples if succ_samples else n_sample
         self.h = h
         self.adaptive_covar = adaptive_covar
@@ -131,9 +135,9 @@ class TrajectoryLearning(object):
     def __str__(self):
 
         if self.model == 'dmp':
-            info = "N Basis:{}\nK:{}\nD:{}\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}\nAdaptive Covariance:{}\nModel{}".format(
+            info = "N Basis:{}\nK:{}\nD:{}\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}\nAdaptive Covariance:{}\nModel:{}\nN Demo:{}".format(
                 self.n_basis, self.dmp.K, self.dmp.D, self.alpha, self.beta, self.dmp.n_sample, self.n_episode, self.std_initial,
-                self.decay_episode, self.is_sparse, self.adaptive_covar, self.model
+                self.decay_episode, self.is_sparse, self.adaptive_covar, self.model, self.n_demo
             )
         else:
             info = "N Clusters:{}\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}\nAdaptive Covariance:{}\nModel{}".format(
