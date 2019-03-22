@@ -28,6 +28,7 @@ class HMMGoalModel(object):
             start_idxs.append(start_idxs[i-1]+per_lens[i-1])
 
         self.final_states = np.array(self.hmm.predict(per_data, per_lens))[upper_idxs]
+        print self.final_states
         self.n_components = self.hmm.n_components
         #self.beliefs = np.zeros((n_points+1,  self.n_components))
         #self.beliefs[0] = self.hmm.startprob_
@@ -78,13 +79,13 @@ class HMMGoalModel(object):
         return pdf_multivariate(o_t, self.hmm.means_[i], self.hmm.covars_[i])
 
     def is_success(self, per_trj):
-        if self.hmm.score(per_trj) <= self.ll_base:
-            return False
-        return True
-        # per_trj = np.array(per_trj)
-        # states = self.hmm.predict(per_trj)
-        # final_state = states[-1]
-        # return final_state in self.final_states
+        # if self.hmm.score(per_trj) <= self.ll_base:
+        #     return False
+        # return True
+        per_trj = np.array(per_trj)
+        states = self.hmm.predict(per_trj)
+        final_state = states[-1]
+        return final_state in self.final_states
 
     def sample(self, n, pos=True, t=None):
         t = self.T if t is None else t
