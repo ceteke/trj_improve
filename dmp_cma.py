@@ -10,8 +10,6 @@ n_episode = 5
 n_rollout = 5
 
 tl = TrajectoryLearning('/home/ceteke/Desktop/lfd_improve_demos/open', 15, 200, 5, 5, True)
-print tl.dmp.sigmas.shape
-exit()
 
 ncol = 3
 nrow = 5
@@ -49,7 +47,7 @@ for e in range(1,n_episode+1):
     tl.dmp.w = np.loadtxt(os.path.join(episode_dir, '1', 'w.csv'), delimiter=',')
     C_curr = np.load(os.path.join(episode_dir, '1', 'cma_cov.csv.npy'))
     tl.dmp.update_C_cma(C_curr)
-    std_curr = np.loadtxt(os.path.join(episode_dir, '1', 'sigma.csv'), delimiter=',')
+    std_curr = np.loadtxt(os.path.join(episode_dir, '1', 'sigma.csv'), delimiter=',')[:nrow*ncol]
     tl.dmp.sigmas = std_curr
 
     t, x, _, _ = tl.dmp.imitate()
@@ -62,7 +60,7 @@ for e in range(1,n_episode+1):
     tl.dmp.w = np.loadtxt(os.path.join(episode_dir, str(n_rollout), 'w.csv'), delimiter=',')
     C_next = np.load(os.path.join(episode_dir, str(n_rollout), 'cma_cov.csv.npy'))
     tl.dmp.update_C_cma(C_next)
-    std_next = np.loadtxt(os.path.join(episode_dir, str(n_rollout), 'sigma.csv'), delimiter=',')
+    std_next = np.loadtxt(os.path.join(episode_dir, str(n_rollout), 'sigma.csv'), delimiter=',')[:nrow*ncol]
     tl.dmp.sigmas = std_next
 
     t, x, _, _ = tl.dmp.imitate()
@@ -78,8 +76,8 @@ for e in range(1,n_episode+1):
     cov_curr = C_curr * np.square(std_curr.reshape(-1,1,1))
     cov_next = C_next * np.square(std_next.reshape(-1,1,1))
 
-    axs3[0,0].bar(range(nrow*ncol), [np.linalg.norm(c, axis=0) for c in cov_curr])
-    axs3[0,1].bar(range(nrow*ncol), [np.linalg.norm(c, axis=0) for c in cov_next])
+    axs3[0].bar(range(nrow*ncol), [np.linalg.norm(c) for c in cov_curr])
+    axs3[1].bar(range(nrow*ncol), [np.linalg.norm(c) for c in cov_next])
 
     f3.show()
 
