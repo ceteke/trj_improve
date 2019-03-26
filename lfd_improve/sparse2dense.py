@@ -58,15 +58,19 @@ class QS2D(object):
 
                 if n > 1:
                     diff = np.linalg.norm(values_iter[:n-1].mean(axis=0) - values_iter[:n].mean(axis=0))
+                    print diff
                     if diff < tol:
                         break
 
-            plt.boxplot(values_iter, labels=range(len(self.v_table)))
-            plt.show()
+            # plt.boxplot(values_iter, labels=range(len(self.v_table)))
+            # plt.show()
 
             self.v_table = np.mean(values_iter, axis=0)
             self.v_table = (self.v_table - self.v_table.min()) / (
                     self.v_table.max() - self.v_table.min())  # Normalize values
+            # print self.v_table
+            # plt.bar(list(range(len(self.v_table))), self.v_table)
+            # plt.show()
         else:
             self.v_table = values
 

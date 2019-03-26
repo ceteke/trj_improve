@@ -1,5 +1,5 @@
 import numpy as np
-from dtw import dtw
+from fastdtw import fastdtw
 
 
 def update_gmm(gmm, centers, covars, weights):
@@ -28,22 +28,26 @@ def get_jerk_reward(dddx):
     total_jerk = np.linalg.norm(dddx, axis=1).sum()
     return 1. / total_jerk
 
-def align_trajectories(data, longest=True):
-    data = list(map(np.array, data))
-    if longest:
-        ls = np.argmax([d.shape[0] for d in data])
-    else:
-        ls = np.argmin([d.shape[0] for d in data])
+def align_trajectories(times, ee_poses, longest=True):
+    def dist(x, y):
+        return np.linalg.norm(x[:3]-y[:3])
 
-    data_warp = []
+    met = np.argmax if longest else np.argmin
+    t0_idx = met(map(len, times))
+    ee0 = ee_poses[t0_idx]
+    t0 = times[t0_idx]
 
-    for j, d in enumerate(data):
-        dist, cost, acc, path = dtw(data[ls], d,
-                                    dist=lambda x, y: np.linalg.norm(x - y, ord=1))
+    ee_poses_aligned = np.zeros((len(ee_poses), len(ee0), 7))
 
-        data_warp += [d[path[1]][:data[ls].shape[0]]]
+    for i in range(len(times)):
+        if i != t0_idx:
+            distance, path = fastdtw(ee0, ee_poses[i], dist=dist)
+            align_idxs = np.array([p[1] for p in path])[:len(ee0)]
+            ee_poses_aligned[i] = ee_poses[i][align_idxs]
+        else:
+            ee_poses_aligned[i] = ee_poses[i]
 
-    return np.array(data_warp)
+    return t0, ee_poses_aligned
 
 def sampling_fn(r, lb, a, h):
     return lb + a * (np.exp(-np.square(np.log(r+1e-10)/h)))

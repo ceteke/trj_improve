@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 plot_greedy = True
-skill_dir = '/home/ceteke/Desktop/dmp_improve_demos/open'
+skill_dir = '/home/ceteke/Desktop/lfd_improve_demos/open'
 demo_dir = '{}/1'.format(skill_dir)
 
 demo = Demonstration(demo_dir)
@@ -18,9 +18,9 @@ baseline_jerk = 0.5
 experiment_names = {
     #'PoWER Sparse': range(53,63),
     #'PoWER Dense': range(63,73),
-    'CMA DMP': range(73,83),
-    'CMA GMM': range(83,93),
-    'CMA DMP v2': range(125,135)
+    #'CMA DMP': range(73,83),
+    #'CMA GMM': range(83,93),
+    'CMA DMP v2': range(1,2)
 }
 
 for experiment_name, experiment_idxs in experiment_names.items():
@@ -58,10 +58,10 @@ for experiment_name, experiment_idxs in experiment_names.items():
     perception_mean = perception_rewards.mean(axis=0)
     jerk_mean = jerk_rewards.mean(axis=0)
 
-    #plt.plot(total_mean, label=experiment_name)
-    #plt.fill_between(range(N), total_mean-total_std, total_mean+total_std, alpha=0.2)
-    plt.plot(perception_mean, label=experiment_name)
-    plt.fill_between(range(N), perception_mean-perception_std, perception_mean+perception_std, alpha=0.1)
+    plt.plot(total_mean, label=experiment_name)
+    plt.fill_between(range(N), total_mean-total_std, total_mean+total_std, alpha=0.2)
+    #plt.plot(perception_mean, label=experiment_name)
+    #plt.fill_between(range(N), perception_mean-perception_std, perception_mean+perception_std, alpha=0.1)
     #plt.plot(jerk_mean, label=experiment_name)
     #plt.fill_between(range(N), jerk_mean-jerk_std, jerk_mean+jerk_std, alpha=0.1)
 plt.axhline(baseline_jerk, label='Jerk Baseline', linestyle='--', c='black')

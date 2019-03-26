@@ -78,22 +78,30 @@ class TrajectoryLearning(object):
         self.x_gold = x_gold
 
         if str.lower(model) == 'dmp':
-            self.std = 65 if not adaptive_covar else 0.2
+            self.std = 65 if not adaptive_covar else 1
 
             weights = np.zeros((len(t_gold), 7, self.n_basis))
+            covs = np.zeros((len(t_gold), 7, 7))
+
             for d in range(len(t_gold)):
                 dmp_single = ImitationDMP(self.n_basis, K)
                 dmp_single.fit(t_gold[d], x_gold[d], dx_gold[d], ddx_gold[d])
                 weights[d] = dmp_single.w
+                covs[d] = np.cov(weights[d])
 
-            mean_w = np.mean(weights, axis=0)
-            cov_w = np.cov(weights.reshape(7,-1)) * 0.5
-            std_basis = np.sqrt(np.var(weights.reshape(-1,7), axis=1))
+            #std_basis = np.sqrt(np.var(weights.reshape(-1,7), axis=1))
+            #print std_basis
+            init_cov = np.mean(covs, axis=0)
 
             self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample,
-                                                                                        std_init=std_basis*self.std)
-            rand_demo = np.random.randint(0, len(t_gold))
-            self.dmp.fit(t_gold[rand_demo], x_gold[rand_demo], dx_gold[rand_demo], ddx_gold[rand_demo])
+                                                                                        std_init=self.std, init_cov=init_cov)
+
+            t0, all_ee = align_trajectories(t_gold, x_gold)
+            mean_ee = np.mean(all_ee, axis=0)
+            spliner = Spliner(t0, mean_ee)
+            t_fit, x_fit, dx_fit, ddx_fit, _ = spliner.get_motion
+
+            self.dmp.fit(t_fit, x_fit, dx_fit, ddx_fit)
 
             t_imitate, x_imitate, _, _ = self.dmp.imitate()
         elif str.lower(model) == 'gmm':
