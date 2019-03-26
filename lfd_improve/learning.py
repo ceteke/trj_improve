@@ -10,10 +10,11 @@ import os
 from utils import align_trajectories, sampling_fn
 from gmm_gmr.rl import GMMCMA
 import copy
+import matplotlib.pyplot as plt
 
 
 class TrajectoryLearning(object):
-    def __init__(self, data_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.5,
+    def __init__(self, data_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.,
                  values=None, goal_model=None, succ_samples=None, h=0.75, adaptive_covar=True,
                  model='dmp'):
         '''
@@ -81,20 +82,22 @@ class TrajectoryLearning(object):
             self.std = 65 if not adaptive_covar else 1
 
             weights = np.zeros((len(t_gold), 7, self.n_basis))
-            covs = np.zeros((len(t_gold), 7, 7))
 
             for d in range(len(t_gold)):
                 dmp_single = ImitationDMP(self.n_basis, K)
                 dmp_single.fit(t_gold[d], x_gold[d], dx_gold[d], ddx_gold[d])
                 weights[d] = dmp_single.w
-                covs[d] = np.cov(weights[d])
 
             #std_basis = np.sqrt(np.var(weights.reshape(-1,7), axis=1))
             #print std_basis
-            init_cov = np.mean(covs, axis=0)
+            init_cov = np.cov(weights.reshape(7*self.n_basis, -1))
+            # vars = np.diag(init_cov).reshape(self.n_basis, 7)
+            # im = plt.imshow(vars[:,:3].mean(axis=1).reshape(-1,1), cmap='hot', interpolation='nearest')
+            # plt.colorbar(im)
+            # plt.show()
 
-            self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, n_sample,
-                                                                                        std_init=self.std, init_cov=init_cov)
+            self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, std_init=self.std,
+                                                                                        init_cov=init_cov)
 
             t0, all_ee = align_trajectories(t_gold, x_gold)
             mean_ee = np.mean(all_ee, axis=0)
