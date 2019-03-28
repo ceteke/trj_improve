@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 
 
 class TrajectoryLearning(object):
-    def __init__(self, data_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.,
+    def __init__(self, data_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.25,
                  values=None, goal_model=None, succ_samples=None, h=0.75, adaptive_covar=True,
-                 model='dmp'):
+                 model='dmp', init_std=None):
         '''
         :param demo_dir: Demonstration directory
         :param n_basis: Number of DMP basis / GMM Components
@@ -79,7 +79,10 @@ class TrajectoryLearning(object):
         self.x_gold = x_gold
 
         if str.lower(model) == 'dmp':
-            self.std = 65 if not adaptive_covar else 1
+            if init_std:
+                self.std = init_std
+            else:
+                self.std = 65 if not adaptive_covar else 1
 
             weights = np.zeros((len(t_gold), 7, self.n_basis))
 
@@ -97,13 +100,29 @@ class TrajectoryLearning(object):
             # plt.show()
 
             self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, std_init=self.std,
-                                                                                        init_cov=init_cov)
+                                                                                        init_cov=init_cov, n_sample=n_sample)
 
-            t0, all_ee = align_trajectories(t_gold, x_gold)
-            mean_ee = np.mean(all_ee, axis=0)
-            spliner = Spliner(t0, mean_ee)
-            t_fit, x_fit, dx_fit, ddx_fit, _ = spliner.get_motion
+            # t0, all_ee = align_trajectories(t_gold, x_gold)
+            # all_x = []
+            # all_dx = []
+            # all_ddx = []
+            #
+            # for n in range(len(all_ee)):
+            #     spliner = Spliner(t0, all_ee[n])
+            #     _, x_fit, dx_fit, ddx_fit, _ = spliner.get_motion
+            #     all_x.append(x_fit)
+            #     all_dx.append(dx_fit)
+            #     all_ddx.append(ddx_fit)
 
+            #mean_ee = np.mean(all_ee, axis=0)
+
+            #t_fit, x_fit, dx_fit, ddx_fit, _ = spliner.get_motion
+
+            rand_demo = np.random.randint(len(t_gold))
+            print "Picked demo: ", rand_demo
+            t_fit, x_fit, dx_fit, ddx_fit = t_gold[rand_demo], x_gold[rand_demo], dx_gold[rand_demo], ddx_gold[rand_demo]
+
+            # self.dmp.fit(t0, np.array(all_x), np.array(all_dx), np.array(all_ddx))
             self.dmp.fit(t_fit, x_fit, dx_fit, ddx_fit)
 
             t_imitate, x_imitate, _, _ = self.dmp.imitate()

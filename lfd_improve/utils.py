@@ -30,7 +30,20 @@ def get_jerk_reward(dddx):
 
 def align_trajectories(times, ee_poses, longest=True):
     def dist(x, y):
-        return np.linalg.norm(x[:3]-y[:3])
+        euc = np.linalg.norm(x[:3]-y[:3])
+
+        x_quat = x[4:]
+        y_quat = y[4:]
+
+        if np.linalg.norm(x_quat) != 1:
+            x_quat /= np.linalg.norm(x_quat)
+
+        if np.linalg.norm(y_quat) != 1:
+            y_quat /= np.linalg.norm(y_quat)
+
+        theta = 1 - x_quat.dot(y_quat) ** 2
+
+        return euc + theta
 
     met = np.argmax if longest else np.argmin
     t0_idx = met(map(len, times))

@@ -18,6 +18,7 @@ class Experiment(object):
                 filter(lambda x: 'greedy' in x, os.listdir(self.ex_dir))))
         self.greedy_dirs = sorted(self.greedy_dirs,
                                   key=lambda x: int(x.split('_')[-1]))
+        print len(self.greedy_dirs)
 
         if freq:
             idxs = np.arange(0, freq)

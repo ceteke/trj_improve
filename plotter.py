@@ -18,14 +18,13 @@ baseline_jerk = 0.5
 experiment_names = {
     #'PoWER Sparse': range(53,63),
     #'PoWER Dense': range(63,73),
-    #'CMA DMP': range(73,83),
+    #'CMA DMP': range(125,135),
     #'CMA GMM': range(83,93),
-    'CMA DMP v2': range(135,140)
+    'CMA DMP v2': range(154,164)
 }
 
 for experiment_name, experiment_idxs in experiment_names.items():
-    freq = 6 if 'CMA' in experiment_name else None
-    experiments = [Experiment('{}/ex{}'.format(skill_dir,e), freq=freq) for e in experiment_idxs]
+    experiments = [Experiment('{}/ex{}'.format(skill_dir,e)) for e in experiment_idxs]
     perception_greedy_all = np.concatenate([ex.perception_rewards_greedy for ex in experiments])
     jerk_greedy_all = np.concatenate([ex.jerk_rewards_greedy for ex in experiments])
 
@@ -47,7 +46,7 @@ for experiment_name, experiment_idxs in experiment_names.items():
         #if 'CMA' in experiment_name:
         #    jerk_rewards[i] /= 2
 
-    total_rewards = perception_rewards + jerk_rewards
+    total_rewards = perception_rewards #+ jerk_rewards
 
     total_std = total_rewards.var(axis=0)
     perception_std = perception_rewards.var(axis=0)
@@ -58,14 +57,15 @@ for experiment_name, experiment_idxs in experiment_names.items():
     perception_mean = perception_rewards.mean(axis=0)
     jerk_mean = jerk_rewards.mean(axis=0)
 
-    #plt.plot(total_mean, label=experiment_name)
+    plt.plot(range(1,len(total_mean)+1), total_mean)
     #plt.fill_between(range(N), total_mean-total_std, total_mean+total_std, alpha=0.2)
-    plt.plot(perception_mean, label=experiment_name)
-    plt.fill_between(range(N), perception_mean-perception_std, perception_mean+perception_std, alpha=0.1)
+    plt.boxplot(perception_rewards)
+    #plt.plot(perception_mean, label=experiment_name)
+    #plt.fill_between(range(N), perception_mean-perception_std, perception_mean+perception_std, alpha=0.1)
     #plt.plot(jerk_mean, label=experiment_name)
     #plt.fill_between(range(N), jerk_mean-jerk_std, jerk_mean+jerk_std, alpha=0.1)
-plt.axhline(baseline_jerk, label='Jerk Baseline', linestyle='--', c='black')
-plt.title("Total Reward vs. n^th Greedy")
+#plt.axhline(baseline_jerk, label='Jerk Baseline', linestyle='--', c='black')
+plt.title("Perception Reward")
 plt.legend()
 plt.show()
 
