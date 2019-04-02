@@ -1,4 +1,4 @@
-from dmp.rl import DMPPower, DMPCMA
+from dmp.rl import DMPPower, DMPCMA, DMPES
 from dmp.imitation import ImitationDMP
 from data import MultiDemonstration
 from sparse2dense import QS2D
@@ -82,7 +82,7 @@ class TrajectoryLearning(object):
             if init_std:
                 self.std = init_std
             else:
-                self.std = 65 if not adaptive_covar else 1
+                self.std = 65 #if not adaptive_covar else 1
 
             weights = np.zeros((len(t_gold), 7, self.n_basis))
 
@@ -93,14 +93,22 @@ class TrajectoryLearning(object):
 
             #std_basis = np.sqrt(np.var(weights.reshape(-1,7), axis=1))
             #print std_basis
-            init_cov = np.cov(weights.reshape(7*self.n_basis, -1))
+            #init_cov = np.cov(weights.reshape(7*self.n_basis, -1))
+            #print np.diag(init_cov).reshape(7, self.n_basis).shape
+            init_cov = np.zeros((self.n_basis, 7, 7))
+            for b in range(self.n_basis):
+                cov_b = np.cov(weights[:,:,b], rowvar=False)
+                init_cov[b] = cov_b
             # vars = np.diag(init_cov).reshape(self.n_basis, 7)
             # im = plt.imshow(vars[:,:3].mean(axis=1).reshape(-1,1), cmap='hot', interpolation='nearest')
             # plt.colorbar(im)
             # plt.show()
 
-            self.dmp = DMPPower(n_basis, K, n_sample) if not adaptive_covar else DMPCMA(n_basis, K, std_init=self.std,
-                                                                                        init_cov=init_cov, n_sample=n_sample)
+            if not adaptive_covar:
+                self.dmp = DMPPower(n_basis, K, n_sample)
+            else:
+                # self.dmp = DMPCMA(n_basis, K, std_init=self.std, init_cov=init_cov, n_sample=n_sample)
+                self.dmp = DMPES(n_basis, K, n_sample, adaptive_exp=True, std_init=self.std, init_cov=init_cov)
 
             # t0, all_ee = align_trajectories(t_gold, x_gold)
             # all_x = []
@@ -118,7 +126,8 @@ class TrajectoryLearning(object):
 
             #t_fit, x_fit, dx_fit, ddx_fit, _ = spliner.get_motion
 
-            rand_demo = np.random.randint(len(t_gold))
+            #rand_demo = np.random.randint(len(t_gold))
+            rand_demo=0
             print "Picked demo: ", rand_demo
             t_fit, x_fit, dx_fit, ddx_fit = t_gold[rand_demo], x_gold[rand_demo], dx_gold[rand_demo], ddx_gold[rand_demo]
 
@@ -186,11 +195,8 @@ class TrajectoryLearning(object):
         return initial
 
     def generate_episode(self):
-        if self.adaptive_covar:
-            episode = self.dmp.generate_episode()
-        else:
-            print "STD:", self.std
-            episode = self.dmp.generate_episode(self.std)
+        print "STD:", self.std
+        episode = self.dmp.generate_episode(self.std)
         return episode
 
     def remove_episode(self):
