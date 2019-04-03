@@ -20,7 +20,7 @@ experiment_names = {
     #'PoWER Dense': range(63,73),
     #'CMA DMP': range(125,135),
     #'CMA GMM': range(83,93),
-    'CMA DMP v2': range(154,164)
+    'CMA DMP v2': range(164,169)
 }
 
 for experiment_name, experiment_idxs in experiment_names.items():
@@ -46,6 +46,9 @@ for experiment_name, experiment_idxs in experiment_names.items():
         #if 'CMA' in experiment_name:
         #    jerk_rewards[i] /= 2
 
+    print perception_rewards[:,-1]
+    print jerk_rewards[:,-1]
+
     total_rewards = perception_rewards #+ jerk_rewards
 
     total_std = total_rewards.var(axis=0)
@@ -57,9 +60,10 @@ for experiment_name, experiment_idxs in experiment_names.items():
     perception_mean = perception_rewards.mean(axis=0)
     jerk_mean = jerk_rewards.mean(axis=0)
 
-    plt.plot(range(1,len(total_mean)+1), total_mean)
+    #plt.plot(range(1,len(total_mean)+1), total_mean)
     #plt.fill_between(range(N), total_mean-total_std, total_mean+total_std, alpha=0.2)
-    plt.boxplot(perception_rewards)
+    #plt.boxplot(perception_rewards)
+    plt.boxplot(jerk_rewards)
     #plt.plot(perception_mean, label=experiment_name)
     #plt.fill_between(range(N), perception_mean-perception_std, perception_mean+perception_std, alpha=0.1)
     #plt.plot(jerk_mean, label=experiment_name)

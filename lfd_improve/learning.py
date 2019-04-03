@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 
 class TrajectoryLearning(object):
-    def __init__(self, data_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.25,
+    def __init__(self, data_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.,
                  values=None, goal_model=None, succ_samples=None, h=0.75, adaptive_covar=True,
                  model='dmp', init_std=None):
         '''
@@ -103,7 +103,7 @@ class TrajectoryLearning(object):
             # im = plt.imshow(vars[:,:3].mean(axis=1).reshape(-1,1), cmap='hot', interpolation='nearest')
             # plt.colorbar(im)
             # plt.show()
-
+            self.n_sample = n_sample
             if not adaptive_covar:
                 self.dmp = DMPPower(n_basis, K, n_sample)
             else:
@@ -257,7 +257,7 @@ class TrajectoryLearning(object):
         reward = per_rew + jerk_rew
         #print "\tSuccess rate:", success_rate
 
-        if self.dmp.update(reward):
+        if self.dmp.update(-reward if self.adaptive_covar else reward):
 
             self.e += 1
 

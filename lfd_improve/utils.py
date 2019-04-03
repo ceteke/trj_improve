@@ -128,3 +128,14 @@ def isPD(B):
         return True
     except np.linalg.LinAlgError:
         return False
+
+def plot_dmp_episodes(dmp, axs, n=10, std=1.0):
+    t, x, _, _ = dmp.imitate()
+
+    for i in range(3):
+        axs[i].plot(t, x[:,i], color='black')
+
+    for _ in range(n):
+        t, x, _, _ = dmp.generate_episode(std)
+        for i in range(3):
+            axs[i].plot(t, x[:, i], color='C1', linestyle=':')

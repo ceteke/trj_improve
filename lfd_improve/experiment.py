@@ -18,7 +18,6 @@ class Experiment(object):
                 filter(lambda x: 'greedy' in x, os.listdir(self.ex_dir))))
         self.greedy_dirs = sorted(self.greedy_dirs,
                                   key=lambda x: int(x.split('_')[-1]))
-        print len(self.greedy_dirs)
 
         if freq:
             idxs = np.arange(0, freq)
@@ -26,6 +25,22 @@ class Experiment(object):
 
 
         self.perception_rewards_greedy, self.jerk_rewards_greedy, self.successes_greedy, _ = self.get_rewards(self.greedy_dirs)
+
+        self.rollout_dirs = []
+        self.success_rates = []
+
+        for ep in self.episode_dirs:
+            r_dirs = list(
+                map(lambda x: os.path.join(ep, x),
+                    filter(lambda x: str.isdigit(x), os.listdir(ep))))
+            r_dirs = sorted(r_dirs, key=lambda x: int(os.path.basename(os.path.normpath(x))))
+            self.rollout_dirs += r_dirs
+
+            success = self.get_rewards(r_dirs)[2]
+            sr = np.sum(success) / len(success)
+            self.success_rates.append(sr)
+
+        print self.success_rates
 
         #self.weights = np.array([np.loadtxt(os.path.join(e, 'dmp.csv'),
         #                                    delimiter=',') for e in [self.ex_dir] + self.episode_dirs])
