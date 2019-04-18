@@ -173,11 +173,11 @@ class TrajectoryLearning(object):
 
         reward = per_rew + jerk_rew
 
-        if self.dmp.update(-reward if self.adaptive_covar else reward):
+        self.dmp.update(-reward if self.adaptive_covar else reward)
 
-            self.e += 1
+        self.e += 1
 
-            if not self.adaptive_covar:
-                self.std = self.decay_std(self.std_initial)
+        if not self.adaptive_covar:
+            self.std = self.decay_std(self.std_initial)
 
         return per_rew, jerk_rew, is_success

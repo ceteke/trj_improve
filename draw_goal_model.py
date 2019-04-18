@@ -1,6 +1,5 @@
 from lfd_improve.learning import TrajectoryLearning
 import pygraphviz as pgv
-import numpy as np
 import os
 from open3d import *
 
