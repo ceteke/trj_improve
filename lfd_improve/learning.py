@@ -6,35 +6,40 @@ from goal_model import HMMGoalModel
 import numpy as np, pickle
 from sklearn.decomposition import PCA
 from spliner import Spliner
+import time
 
 
 class TrajectoryLearning(object):
     def __init__(self, data_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.,
-                 values=None, goal_model=None, adaptive_covar=True, init_std=None):
+                 values=None, goal_model=None, adaptive_covar=True, init_std=None, n_goal_states=None):
 
+        self.data_dir = data_dir
         self.demo = MultiDemonstration(data_dir)
         self.n_demo = len(self.demo.demos)
         self.pca = PCA(n_components=n_perception)
         self.n_basis = n_basis
 
-        per_lens = list(map(lambda d: len(d.per_feats), self.demo.demos))
-        per_feats = np.concatenate([d.per_feats for d in self.demo.demos])
+        self.per_lens = list(map(lambda d: len(d.per_feats), self.demo.demos))
+        self.per_feats = np.concatenate([d.per_feats for d in self.demo.demos])
 
-        per_data = self.pca.fit_transform(per_feats)
+        self.per_data = self.pca.fit_transform(self.per_feats)
 
         print "Perception PCA Exp. Var:", np.sum(self.pca.explained_variance_ratio_)
         self.n_episode = n_episode
         self.is_sparse = is_sparse
 
         if goal_model is None:
-            self.goal_model = HMMGoalModel(per_data, per_lens)
+            self.goal_model = HMMGoalModel(self.per_data, self.per_lens, n_goal_states)
         else:
             self.goal_model = goal_model
 
         print "Learning reward function..."
         if not is_sparse:
             if values is None:
+                t = time.time()
                 self.s2d = QS2D(self.goal_model)
+                print time.time() -t
+                exit()
             else:
                 self.s2d = QS2D(self.goal_model, values=values)
 
@@ -115,6 +120,7 @@ class TrajectoryLearning(object):
 
     def generate_episode(self):
         std = 1. if self.adaptive_covar else self.std
+        print "STD", std
         episode = self.dmp.generate_episode(std)
         return episode
 
