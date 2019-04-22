@@ -65,3 +65,12 @@ class QS2D(object):
             rewards.append(self.v_table[s])
 
         return np.array(rewards)
+
+    def get_expected_return(self, per_seq):
+        posterior = self.goal_model.hmm.predict_proba(per_seq)[-1]
+        R = 0.0
+
+        for i, p_s in posterior:
+            R += self.v_table[i] * p_s
+
+        return R

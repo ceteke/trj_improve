@@ -37,10 +37,10 @@ class Experiment(object):
             self.rollout_dirs += r_dirs
 
             success = self.get_rewards(r_dirs)[2]
-            sr = np.sum(success) / len(success)
-            self.success_rates.append(sr)
+#            sr = np.sum(success) / len(success)
+ #           self.success_rates.append(sr)
 
-        print self.success_rates
+  #      print self.success_rates
 
         #self.weights = np.array([np.loadtxt(os.path.join(e, 'dmp.csv'),
         #                                    delimiter=',') for e in [self.ex_dir] + self.episode_dirs])

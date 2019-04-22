@@ -38,8 +38,8 @@ class TrajectoryLearning(object):
             if values is None:
                 t = time.time()
                 self.s2d = QS2D(self.goal_model)
-                print time.time() -t
-                exit()
+                #print time.time() -t
+                #exit()
             else:
                 self.s2d = QS2D(self.goal_model, values=values)
 
@@ -61,7 +61,7 @@ class TrajectoryLearning(object):
         if init_std:
             self.std = init_std
         else:
-            self.std = 1
+            self.std = 1.0
 
         weights = np.zeros((len(t_gold), 7, self.n_basis))
 

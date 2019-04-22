@@ -1,5 +1,4 @@
 import warnings
-from sklearn.mixture import GaussianMixture
 import numpy as np
 from hmmlearn.hmm import GaussianHMM
 from utils import pdf_multivariate

@@ -7,7 +7,7 @@ n_rollout = 5
 
 #print np.linalg.norm(np.loadtxt('/home/ceteke/Desktop/lfd_improve_demos_sim/open/ex153/5/10/cma_cov.csv', delimiter=',') - np.loadtxt('/home/ceteke/Desktop/lfd_improve_demos_sim/open/ex153/1/1/cma_cov.csv', delimiter=','))
 #exit()
-tl1 = TrajectoryLearning('/home/ceteke/Desktop/lfd_improve_demos_sim/open', 10, 150, 1, 5, True, adaptive_covar=True)
+tl1 = TrajectoryLearning('/home/ceteke/Desktop/lfd_improve_demos_sim/open', 20, 100, 1, 5, True, adaptive_covar=False)
 #tl1.dmp.setC(np.loadtxt('/home/ceteke/Desktop/lfd_improve_demos_sim/open/ex153/5/10/cma_cov.csv', delimiter=','))
 
 t, x, _, _ = tl1.dmp.imitate()
