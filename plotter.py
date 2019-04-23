@@ -19,9 +19,9 @@ baseline_jerk = 0.5
 experiment_names = {
     #'PoWER Sparse': range(53,63),
     #'PoWER Dense': range(63,73),
-    'CMA DMP': range(214,218),
+    'CMA DMP': range(234,248),
     #'PoWER Dense': range(194,214),
-    'CMA Sparse': range(234,238)
+    'CMA Dense': range(250,270)
 }
 
 data = {}
@@ -44,7 +44,7 @@ for experiment_name, experiment_idxs in experiment_names.items():
     total_rewards = np.zeros((len(experiments), N))
 
     for i, exp in enumerate(experiments):
-        perception_rewards[i] = exp.successes_greedy
+        perception_rewards[i] = exp.perception_rewards_greedy
         jerk_rewards[i] = exp.jerk_rewards_greedy
         #if 'CMA' in experiment_name:
         #    jerk_rewards[i] /= 2

@@ -36,10 +36,7 @@ class TrajectoryLearning(object):
         print "Learning reward function..."
         if not is_sparse:
             if values is None:
-                t = time.time()
                 self.s2d = QS2D(self.goal_model)
-                #print time.time() -t
-                #exit()
             else:
                 self.s2d = QS2D(self.goal_model, values=values)
 
@@ -142,7 +139,7 @@ class TrajectoryLearning(object):
         if self.is_sparse:
             perception_reward = 1.0 if is_success else 0.0
         else:
-            perception_reward = self.s2d.get_reward(per_trj)[-1]
+            perception_reward = self.s2d.get_expected_return(per_trj)
 
         if jerk:
             jerk_reward = self.get_jerk_reward(ts, x)
