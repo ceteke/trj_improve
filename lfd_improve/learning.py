@@ -11,9 +11,10 @@ import os
 
 class TrajectoryLearning(object):
     def __init__(self, data_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.,
-                 values=None, goal_model=None, adaptive_covar=True, init_std=None, n_goal_states=None):
+                 values=None, goal_model=None, adaptive_covar=True, init_std=None, n_goal_states=None, update_cov=False):
 
         self.data_dir = data_dir
+        self.update_cov = update_cov
         self.demo = MultiDemonstration(data_dir)
         self.n_demo = len(self.demo.demos)
         self.pca = PCA(n_components=n_perception)
@@ -77,7 +78,7 @@ class TrajectoryLearning(object):
         if not adaptive_covar:
             self.dmp = DMPPower(n_basis, K, n_sample, std_init=self.std, init_cov=init_cov)
         else:
-            self.dmp = DMPES(n_basis, K, n_sample, std_init=self.std, init_cov=init_cov)
+            self.dmp = DMPES(n_basis, K, n_sample, std_init=self.std, init_cov=init_cov, update_cov=self.update_cov)
 
 
         rand_demo=0
@@ -180,6 +181,8 @@ class TrajectoryLearning(object):
         self.e += 1
 
         if not self.adaptive_covar:
+            self.std = self.decay_std(self.std_initial)
+        if not self.update_cov:
             self.std = self.decay_std(self.std_initial)
 
         return per_rew, jerk_rew, is_success
