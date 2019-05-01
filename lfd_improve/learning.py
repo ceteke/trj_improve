@@ -122,7 +122,11 @@ class TrajectoryLearning(object):
         return initial
 
     def generate_episode(self):
-        std = 1. if self.adaptive_covar else self.std
+        if self.adaptive_covar and not self.update_cov:
+            std = 1.
+        else:
+            std = self.std
+
         print "STD", std
         episode = self.dmp.generate_episode(std)
         return episode
