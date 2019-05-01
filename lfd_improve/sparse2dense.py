@@ -24,11 +24,14 @@ class QS2D(object):
                 self.v_table = (self.v_table - self.v_table.min()) / (
                         self.v_table.max() - self.v_table.min())  # Normalize values
 
+            succ_idx = np.argmax(self.v_table)
+            self.v_table[succ_idx] *= 10. # TODO: This kind of ad-hoc but makes sense as well idk. Maybe we should replace 10 with a smart number
+
         else:
             self.v_table = values
 
-    def learn(self, v):
-        while True:
+    def learn(self, v, max_iter=1000):
+        for _ in range(max_iter):
             features, states = self.goal_model.hmm.sample(self.goal_model.T)
             v, diff = self.update(v, features, states)
             if diff < 1e-10:

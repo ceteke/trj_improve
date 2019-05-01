@@ -1,7 +1,7 @@
 import warnings
 import numpy as np
 from hmmlearn.hmm import GaussianHMM
-from utils import pdf_multivariate
+from utils import pdf_multivariate, aic
 
 
 
@@ -16,14 +16,15 @@ class HMMGoalModel(object):
             hmms = [GaussianHMM(n_components=c) for c in components]
 
             map(lambda g: g.fit(per_data, per_lens), hmms)
-            scores = map(lambda g: g.score(per_data, per_lens), hmms)
+            scores = map(lambda g: aic(g, per_data, per_lens), hmms)
 
-            max_score, self.hmm = sorted(zip(scores, hmms))[-1]
+            max_score, self.hmm = sorted(zip(scores, hmms))[0]
         else:
             self.hmm = GaussianHMM(n_components=n_states)
             self.hmm.fit(per_data, per_lens)
 
-        print "Goal HMM n_components", self.hmm.n_components
+        ll = self.hmm.score(per_data, per_lens)
+        print "Goal HMM n_components", self.hmm.n_components, "Log likelihood", ll
 
         upper_idxs = [per_lens[0]-1]
         start_idxs = [0]

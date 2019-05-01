@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import f_oneway
 
 plot_greedy = True
-skill_dir = '/home/ceteke/Desktop/lfd_improve_demos_sim/open'
+skill_dir = '/home/ceteke/Desktop/lfd_improve_demos/open2'
 demo_dir = '{}/1'.format(skill_dir)
 
 demo = Demonstration(demo_dir)
@@ -19,14 +19,19 @@ baseline_jerk = 0.5
 experiment_names = {
     #'PoWER Sparse': range(53,63),
     #'PoWER Dense': range(63,73),
-    'CMA DMP': range(234,248),
+    #'Sparse': range(254,274),
     #'PoWER Dense': range(194,214),
-    'CMA Dense': range(250,270)
+    'Dense': range(1,4)
 }
 
 data = {}
 
-for experiment_name, experiment_idxs in experiment_names.items():
+f, axs = plt.subplots(1,len(experiment_names))
+
+if len(experiment_names) == 1:
+    axs = [axs]
+
+for axidx, (experiment_name, experiment_idxs) in enumerate(experiment_names.items()):
     experiments = [Experiment('{}/ex{}'.format(skill_dir,e)) for e in experiment_idxs]
     perception_greedy_all = np.concatenate([ex.perception_rewards_greedy for ex in experiments])
     jerk_greedy_all = np.concatenate([ex.jerk_rewards_greedy for ex in experiments])
@@ -44,7 +49,7 @@ for experiment_name, experiment_idxs in experiment_names.items():
     total_rewards = np.zeros((len(experiments), N))
 
     for i, exp in enumerate(experiments):
-        perception_rewards[i] = exp.perception_rewards_greedy
+        perception_rewards[i] = exp.successes_greedy
         jerk_rewards[i] = exp.jerk_rewards_greedy
         #if 'CMA' in experiment_name:
         #    jerk_rewards[i] /= 2
@@ -56,23 +61,31 @@ for experiment_name, experiment_idxs in experiment_names.items():
 
     data[experiment_name] = total_rewards
 
-    total_std = total_rewards.var(axis=0)
+    total_std = total_rewards.std(axis=0)
     total_mean = np.mean(total_rewards, axis=0)
 
-    lines = plt.plot(range(1,len(total_mean)+1), total_mean, label=experiment_name)
-    c = lines[0].get_c()
-   # plt.boxplot(total_rewards)
-    plt.plot(range(1, N+1), total_mean-total_std, alpha=0.9, color=c, linestyle=':')
-    plt.plot(range(1, N+1), total_mean + total_std, alpha=0.9, color=c, linestyle=':')
-    #plt.boxplot(perception_rewards)
+    axs[axidx].plot(range(1,len(total_mean)+1), total_mean, label=experiment_name, marker='o', linestyle=':')
+    axs[axidx].set_title(experiment_name)
+
+    #plt.boxplot(total_rewards)
+    #plt.plot(range(1, N+1), total_mean-total_std, alpha=0.9, color=c, linestyle=':')
+    #plt.plot(range(1, N+1), total_mean + total_std, alpha=0.9, color=c, linestyle=':')
+    #plt.errorbar(range(1, N+1), total_mean, yerr=total_std, fmt='o',
+    #             elinewidth=1, capsize=10, label=experiment_name)
+    axs[axidx].boxplot(perception_rewards)
     #plt.plot(perception_mean, label=experiment_name)
-    #plt.fill_between(range(N), perception_mean-perception_std, perception_mean+perception_std, alpha=0.1)
+    #plt.fill_between(range(1,len(total_mean)+1), total_mean-total_std, total_mean+total_std, alpha=0.1)
     #plt.plot(jerk_mean, label=experiment_name)
     #plt.fill_between(range(N), jerk_mean-jerk_std, jerk_mean+jerk_std, alpha=0.1)
+    axs[axidx].set_xlabel('Episode')
+    axs[axidx].set_ylabel('Success')
+    axs[axidx].grid()
 #plt.axhline(baseline_jerk, label='Jerk Baseline', linestyle='--', c='black')
 
-plt.title("Success")
-plt.legend()
+#plt.title("Success")
+#plt.legend()
+plt.suptitle("Open (Real, n=3)")
+
 #plt.savefig('/home/ceteke/Desktop/box_dense.png')
 plt.show()
 

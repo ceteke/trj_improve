@@ -6,7 +6,7 @@ from goal_model import HMMGoalModel
 import numpy as np, pickle
 from sklearn.decomposition import PCA
 from spliner import Spliner
-import time
+import os
 
 
 class TrajectoryLearning(object):
@@ -106,6 +106,11 @@ class TrajectoryLearning(object):
             )
 
         return info
+
+    def load_params(self, log_dir):
+        self.dmp.w = np.loadtxt(os.path.join(log_dir, 'w.csv'), delimiter=',')
+        self.dmp.exp_covars = np.load(os.path.join(log_dir, 'cma_cov.npy'))
+        self.std = np.loadtxt(os.path.join(log_dir, 'log.csv'))[-1]
 
     def save_goal_model(self, dir):
         pickle.dump(self.goal_model, open(dir, 'wb'))

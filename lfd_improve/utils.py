@@ -2,6 +2,32 @@ import numpy as np
 from fastdtw import fastdtw
 
 
+def aic(hmm, per_data, per_lens, mean=True):
+    lower = 0
+    n_states = hmm.n_components
+    n_dim = per_data.shape[-1]
+    n_params = 0.0
+
+    # Means
+    n_params += n_states * n_dim
+    # Covars Diagonal
+    n_params += n_states * n_dim
+    # Trans mat
+    n_params += n_states ** 2
+    # Priors
+    n_params += n_states
+
+    total_aic = 0.0
+
+    for i in range(len(per_lens)):
+        data = per_data[lower:lower + per_lens[i]]
+        lower += per_lens[i]
+        ll = hmm.score(data)
+        aic = 2 * (n_params - ll)
+        total_aic += aic
+
+    return total_aic / len(per_lens) if mean else total_aic
+
 def update_gmm(gmm, centers, covars, weights):
     gmm.means_ = centers
     gmm.covariances_ = covars

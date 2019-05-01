@@ -2,9 +2,25 @@ from lfd_improve.learning import TrajectoryLearning
 import pygraphviz as pgv
 import os
 from open3d import *
+import pickle
 
-tl1 = TrajectoryLearning('/home/ceteke/Desktop/lfd_improve_demos/open', 10, 150, 1, 5, False, adaptive_covar=True,
-                         n_goal_states=6)
+class RenamingUnpickler(pickle.Unpickler, object):
+    def find_class(self, module, name):
+        if module == 'lfd_improve.lfd_improve.goal_model':
+            module = 'lfd_improve.goal_model'
+        return super(RenamingUnpickler, self).find_class(module, name)
+
+demo_dir = '/home/ceteke/Desktop/lfd_improve_demos/open2'
+val_dir = os.path.join(demo_dir, 'ex1', 'values.csv')
+goal_model_dir = os.path.join(demo_dir, 'ex1', 'goal_model.pk')
+
+vals = np.loadtxt(val_dir)
+
+with open(goal_model_dir, 'rb') as fp:
+    gm = RenamingUnpickler(fp).load()
+
+tl1 = TrajectoryLearning(demo_dir, 10, 150, 1, 5, False, adaptive_covar=True,
+                         values=vals, goal_model=gm)
 
 goal_model = tl1.goal_model
 
@@ -46,6 +62,7 @@ for k, mu in enumerate(goal_model.hmm.means_):
 pc_paths = []
 for mu_idx in mean_pc_idxs:
     fname = 'pf_{}_seg.pcd'.format(mu_idx)
+    print mu_idx
     path = os.path.join(tl1.data_dir, '1', fname)
     pc_paths.append(path)
 
