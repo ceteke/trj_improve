@@ -1,91 +1,95 @@
 from lfd_improve.experiment import Experiment
-from lfd_improve.data import Demonstration
-from lfd_improve.spliner import Spliner
-from lfd_improve.utils import get_jerk_reward
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import f_oneway
 
-plot_greedy = True
-skill_dir = '/home/ceteke/Desktop/lfd_improve_demos/open2'
-demo_dir = '{}/1'.format(skill_dir)
+plt.style.use('seaborn-whitegrid')
 
-demo = Demonstration(demo_dir)
-spliner = Spliner(demo.times, demo.ee_poses)
-_,_,_,_,dddx = spliner.get_motion
 
-baseline_jerk = 0.5
+# skill_dir = '/home/ceteke/Desktop/lfd_improve_demos_sim/open'
 
-experiment_names = {
-    #'PoWER Sparse': range(53,63),
-    #'PoWER Dense': range(63,73),
-    #'Sparse': range(254,274),
-    #'PoWER Dense': range(194,214),
-    'Dense': range(1,4)
+# experiment_names_sparse = {
+#     'PoWER': range(314,334),
+#     'PI2-ES': range(274,294),
+#     'PI2-ES-Cov': range(254,274),
+# }
+#
+# experiment_names_dense = {
+#     'PoWER': range(334,354),
+#     'PI2-ES': range(294,314),
+#     'PI2-ES-Cov': range(234,254),
+# }
+
+skill_dir = '/home/ceteke/Desktop/lfd_improve_demos_sim/close'
+
+experiment_names_sparse = {
+    'PoWER': range(132,152),
+    'PI2-ES': range(72,92),
+    'PI2-ES-Cov': range(32,52),
 }
 
-data = {}
+experiment_names_dense = {
+    'PoWER': range(112,132),
+    'PI2-ES': range(92,112),
+    'PI2-ES-Cov': range(52,72),
+}
 
-f, axs = plt.subplots(1,len(experiment_names))
+markers = {
+    'PoWER': '1',
+    'PI2-ES': '2',
+    'PI2-ES-Cov': '3'
+}
 
-if len(experiment_names) == 1:
-    axs = [axs]
 
-for axidx, (experiment_name, experiment_idxs) in enumerate(experiment_names.items()):
-    experiments = [Experiment('{}/ex{}'.format(skill_dir,e)) for e in experiment_idxs]
-    perception_greedy_all = np.concatenate([ex.perception_rewards_greedy for ex in experiments])
-    jerk_greedy_all = np.concatenate([ex.jerk_rewards_greedy for ex in experiments])
+# Sparse vs Dense
 
-    #np.savetxt('perception_all.csv', perception_greedy_all.reshape(len(experiment_idxs), -1), delimiter=',')
-    #np.savetxt('jerk_all.csv', jerk_greedy_all.reshape(len(experiment_idxs), -1), delimiter=',')
+for method, idxs_sparse in experiment_names_sparse.items():
+    idxs_dense = experiment_names_dense[method]
 
-    n_episode = len(experiments[0].episode_dirs)
-    n_greedy = len(experiments[0].greedy_dirs)
+    experiments_sparse = [Experiment('{}/ex{}'.format(skill_dir, i)) for i in idxs_sparse]
+    experiments_dense = [Experiment('{}/ex{}'.format(skill_dir, i)) for i in idxs_dense]
 
-    N = n_greedy if plot_greedy else n_episode
+    success_sparse = np.array(map(lambda e: e.successes_greedy, experiments_sparse))
+    success_dense = np.array(map(lambda e: e.successes_greedy, experiments_dense))
 
-    perception_rewards = np.zeros((len(experiments), N))
-    jerk_rewards = np.zeros((len(experiments), N))
-    total_rewards = np.zeros((len(experiments), N))
+    sparse_mean = np.mean(success_sparse, axis=0)
+    sparse_var = np.var(success_sparse, axis=0)
 
-    for i, exp in enumerate(experiments):
-        perception_rewards[i] = exp.successes_greedy
-        jerk_rewards[i] = exp.jerk_rewards_greedy
-        #if 'CMA' in experiment_name:
-        #    jerk_rewards[i] /= 2
+    dense_mean = np.mean(success_dense, axis=0)
+    dense_var = np.var(success_dense, axis=0)
 
-    #print perception_rewards[:,-1]
-    #print jerk_rewards[:,-1]
+    plt.title(method)
 
-    total_rewards = perception_rewards #+ jerk_rewards
+    X = list(range(1, len(dense_mean)+1))
 
-    data[experiment_name] = total_rewards
+    plt.plot(X, sparse_mean, label='Sparse', marker=markers[method], markersize=16, linestyle=':')
+    plt.plot(X, dense_mean, label='Dense', marker=markers[method], markersize=16)
 
-    total_std = total_rewards.std(axis=0)
-    total_mean = np.mean(total_rewards, axis=0)
+    plt.fill_between(X, np.clip(sparse_mean+sparse_var, 0, 1), np.clip(sparse_mean-sparse_var, 0, 1), alpha=0.2)
+    plt.fill_between(X, np.clip(dense_mean+dense_var, 0, 1), np.clip(dense_mean-dense_var,0, 1), alpha=0.2)
 
-    axs[axidx].plot(range(1,len(total_mean)+1), total_mean, label=experiment_name, marker='o', linestyle=':')
-    axs[axidx].set_title(experiment_name)
+    plt.ylim((0, 1.01))
+    plt.xlabel('Greedy')
+    plt.ylabel('Success')
+    plt.legend()
+    plt.savefig('/home/ceteke/Desktop/{}.png'.format(method.lower()), bbox_inches="tight", dpi=400)
+    plt.show()
 
-    #plt.boxplot(total_rewards)
-    #plt.plot(range(1, N+1), total_mean-total_std, alpha=0.9, color=c, linestyle=':')
-    #plt.plot(range(1, N+1), total_mean + total_std, alpha=0.9, color=c, linestyle=':')
-    #plt.errorbar(range(1, N+1), total_mean, yerr=total_std, fmt='o',
-    #             elinewidth=1, capsize=10, label=experiment_name)
-    axs[axidx].boxplot(perception_rewards)
-    #plt.plot(perception_mean, label=experiment_name)
-    #plt.fill_between(range(1,len(total_mean)+1), total_mean-total_std, total_mean+total_std, alpha=0.1)
-    #plt.plot(jerk_mean, label=experiment_name)
-    #plt.fill_between(range(N), jerk_mean-jerk_std, jerk_mean+jerk_std, alpha=0.1)
-    axs[axidx].set_xlabel('Episode')
-    axs[axidx].set_ylabel('Success')
-    axs[axidx].grid()
-#plt.axhline(baseline_jerk, label='Jerk Baseline', linestyle='--', c='black')
 
-#plt.title("Success")
-#plt.legend()
-plt.suptitle("Open (Real, n=3)")
+# Compare methods (Dense)
+for method, idxs_dense in experiment_names_dense.items():
+    experiments_dense = [Experiment('{}/ex{}'.format(skill_dir, i)) for i in idxs_dense]
+    success_dense = np.array(map(lambda e: e.successes_greedy, experiments_dense))
 
-#plt.savefig('/home/ceteke/Desktop/box_dense.png')
+    dense_mean = np.mean(success_dense, axis=0)
+    dense_var = np.var(success_dense, axis=0)
+
+    X = list(range(1, len(dense_mean) + 1))
+    plt.plot(X, dense_mean, label=method, marker=markers[method], markersize=16)
+
+plt.ylim((0, 1.01))
+plt.xlabel('Greedy')
+plt.ylabel('Success')
+plt.legend()
+plt.title("Close")
+plt.savefig('/home/ceteke/Desktop/means.png', bbox_inches="tight", dpi=400)
 plt.show()
-

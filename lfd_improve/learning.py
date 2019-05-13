@@ -11,7 +11,7 @@ import os
 
 class TrajectoryLearning(object):
     def __init__(self, data_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.,
-                 values=None, goal_model=None, adaptive_covar=True, init_std=None, n_goal_states=None, update_cov=False):
+                 values=None, goal_model=None, adaptive_covar=True, init_std=None, n_goal_states=None, update_cov=True):
 
         self.data_dir = data_dir
         self.update_cov = update_cov
@@ -180,13 +180,14 @@ class TrajectoryLearning(object):
 
         reward = per_rew + jerk_rew
 
-        self.dmp.update(-reward if self.adaptive_covar else reward)
+        status = self.dmp.update(-reward if self.adaptive_covar else reward)
 
-        self.e += 1
+        if status:
+            self.e += 1
 
-        if not self.adaptive_covar:
-            self.std = self.decay_std(self.std_initial)
-        if not self.update_cov:
-            self.std = self.decay_std(self.std_initial)
+            if not self.adaptive_covar:
+                self.std = self.decay_std(self.std_initial)
+            if not self.update_cov:
+                self.std = self.decay_std(self.std_initial)
 
         return per_rew, jerk_rew, is_success
