@@ -194,9 +194,9 @@ class TrajectoryLearning(object):
         jerk_reward = self.beta*jerk_reward
 
         print "\tJerk Reward:", jerk_reward
-        print "\tPerception Reward:", perception_reward
+        print "\tPerception Reward:", np.sum(perception_reward)
         reward = perception_reward + jerk_reward
-        print "\tTotal Reward:", reward
+        print "\tTotal Reward:", np.sum(reward)
         print "\tIs successful:", is_success
 
         return perception_reward, jerk_reward, is_success
@@ -220,4 +220,4 @@ class TrajectoryLearning(object):
             self.e += 1
             self.std = self.decay_std(self.std_initial)
 
-        return np.sum(per_rew), jerk_rew, is_success
+        return np.sum(reward), jerk_rew, is_success
