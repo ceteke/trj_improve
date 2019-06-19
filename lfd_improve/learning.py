@@ -1,4 +1,4 @@
-from dmp.rl import DMPPower, DMPES
+from dmp.rl import DMPPower, DMPES, DMPPI2
 from dmp.imitation import ImitationDMP
 from data import MultiDemonstration
 from sparse2dense import QS2D
@@ -11,10 +11,26 @@ import os
 
 class TrajectoryLearning(object):
     def __init__(self, data_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.,
-                 values=None, goal_model=None, adaptive_covar=True, init_std=None, n_goal_states=None, update_cov=True):
+                 values=None, goal_model=None, type='es-cov', init_std=None, n_goal_states=None):
+        '''
+        :param data_dir:
+        :param n_basis:
+        :param K:
+        :param n_sample:
+        :param n_episode:
+        :param is_sparse:
+        :param n_perception:
+        :param alpha:
+        :param beta:
+        :param values:
+        :param goal_model:
+        :param type: one of power, es, es-cov or pi2
+        :param init_std:
+        :param n_goal_states:
+        '''
 
         self.data_dir = data_dir
-        self.update_cov = update_cov
+        self.type = type
         self.demo = MultiDemonstration(data_dir)
         self.n_demo = len(self.demo.demos)
         self.pca = PCA(n_components=n_perception)
@@ -75,10 +91,23 @@ class TrajectoryLearning(object):
 
         self.n_sample = n_sample
 
-        if not adaptive_covar:
+        if type == 'power':
             self.dmp = DMPPower(n_basis, K, n_sample, std_init=self.std, init_cov=init_cov)
+            self.minimize = False
+        elif type == 'es':
+            self.dmp = DMPES(n_basis, K, n_sample, std_init=self.std, init_cov=init_cov, update_cov=False)
+            self.minimize = True
+        elif type == 'es-cov':
+            self.dmp = DMPES(n_basis, K, n_sample, std_init=self.std, init_cov=init_cov, update_cov=True)
+            self.minimize = True
+        elif type == 'pi2':
+            self.dmp = DMPPI2(n_basis, K, n_sample, std_init=self.std, init_cov=init_cov, update_cov=False)
+            self.minimize = True
+        elif type == 'pi2-cov':
+            self.dmp = DMPPI2(n_basis, K, n_sample, std_init=self.std, init_cov=init_cov, update_cov=True)
+            self.minimize = True
         else:
-            self.dmp = DMPES(n_basis, K, n_sample, std_init=self.std, init_cov=init_cov, update_cov=self.update_cov)
+            raise ValueError("Unknown Policy Search Type")
 
 
         rand_demo=0
@@ -96,14 +125,13 @@ class TrajectoryLearning(object):
 
         self.alpha = alpha
         self.beta = beta * (1.0/self.get_jerk_reward(t_imitate, x_imitate))
-        self.adaptive_covar = adaptive_covar
         self.n_basis = n_basis
 
     def __str__(self):
 
-        info = "N Basis:{}\nK:{}\nD:{}\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}\nAdaptive Covariance:{}\nN Demo:{}".format(
+        info = "N Basis:{}\nK:{}\nD:{}\nAlpha:{}\nBeta:{}\nN Sample:{}\nN Episode:{}\nSTD:{}\nDecay:{}\nIs sparse:{}\nType:{}\nN Demo:{}".format(
                 self.n_basis, self.dmp.K, self.dmp.D, self.alpha, self.beta, self.dmp.n_sample, self.n_episode, self.std_initial,
-                self.decay_episode, self.is_sparse, self.adaptive_covar, self.n_demo
+                self.decay_episode, self.is_sparse, self.type, self.n_demo
             )
 
         return info
@@ -122,7 +150,7 @@ class TrajectoryLearning(object):
         return initial
 
     def generate_episode(self):
-        if self.adaptive_covar and self.update_cov:
+        if 'cov' in self.type:
             std = 1.
         else:
             std = self.std
@@ -180,14 +208,10 @@ class TrajectoryLearning(object):
 
         reward = per_rew + jerk_rew
 
-        status = self.dmp.update(-reward if self.adaptive_covar else reward)
+        status = self.dmp.update(-reward if self.minimize else reward)
 
         if status:
             self.e += 1
-
-            if not self.adaptive_covar:
-                self.std = self.decay_std(self.std_initial)
-            if not self.update_cov:
-                self.std = self.decay_std(self.std_initial)
+            self.std = self.decay_std(self.std_initial)
 
         return per_rew, jerk_rew, is_success

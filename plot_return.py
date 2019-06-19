@@ -14,7 +14,7 @@ class RenamingUnpickler(pickle.Unpickler, object):
             module = 'lfd_improve.goal_model'
         return super(RenamingUnpickler, self).find_class(module, name)
 
-demo = "/Volumes/Feyyaz/MSc/lfd_improve_demos/open2/"
+demo = "/Volumes/Feyyaz/MSc/lfd_improve_demos/close/"
 ex_dir = os.path.join(demo, 'ex1')
 
 values = np.loadtxt(os.path.join(ex_dir, 'values.csv'))
@@ -25,7 +25,7 @@ with open(os.path.join(ex_dir, 'goal_model.pk'), 'rb') as fp:
 
 s2d = QS2D(goal_model, values=values)
 
-pc_data = pickle.load(open(os.path.join(demo, '3', 'pcae.pk'), 'rb'))[1:]
+pc_data = pickle.load(open(os.path.join(demo, '1', 'pcae.pk'), 'rb'))[1:]
 pc_ts = np.array([p[0] for p in pc_data])
 pc_feats = np.array([p[1] for p in pc_data])
 pc_ts -= pc_ts[0]
@@ -52,13 +52,13 @@ for t in range(len(pc_feats)):
 
 plt.xticks(range(0, int(max(pc_ts))+1))
 plt.plot(pc_ts, returns)
-plt.title("Open")
+plt.title("Close")
 plt.xlabel('Time (s)')
 plt.ylabel("Return")
-plt.savefig('/Users/cem/Desktop/open_return.png', bbox_inches="tight", dpi=400)
+plt.savefig('/Users/cem/Desktop/close_return.png', bbox_inches="tight", dpi=400)
 plt.show()
 
-ts = [0, 3.5, 4.25, 6, 7, 8, 10]
+ts = [0, 4, 5.25, 6, 7, pc_ts[-1]]
 
 for t in ts:
     print np.argmin(np.abs(pc_ts-t))
