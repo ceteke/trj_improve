@@ -80,12 +80,23 @@ class QS2D(object):
         posterior = self.goal_model.hmm.predict_proba(per_seq)[-1]
         return self.get_expected_reward_for_state(posterior)
 
-    def get_expected_return(self, per_seq):
+    def get_expected_return(self, per_seq, arr=False):
+        '''
+
+        :param per_seq:
+        :param arr: If True returns returns at each time step
+        :return:
+        '''
         posterior = self.goal_model.hmm.predict_proba(per_seq)
 
         expected_return = 0.0
+        returns = []
+
         for i, post in enumerate(posterior):
             r = self.get_expected_reward_for_state(post)
             expected_return += r
+            returns.append(r)
 
+        if arr:
+            return returns
         return expected_return

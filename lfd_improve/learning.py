@@ -177,7 +177,8 @@ class TrajectoryLearning(object):
         if self.is_sparse:
             perception_reward = 1.0 if is_success else 0.0
         else:
-            perception_reward = self.s2d.get_expected_return(per_trj)
+            arr = True if 'pi2' in self.type else False
+            perception_reward = self.s2d.get_expected_return(per_trj, arr)
 
         if jerk:
             jerk_reward = self.get_jerk_reward(ts, x)
@@ -214,4 +215,4 @@ class TrajectoryLearning(object):
             self.e += 1
             self.std = self.decay_std(self.std_initial)
 
-        return per_rew, jerk_rew, is_success
+        return np.sum(per_rew), jerk_rew, is_success
