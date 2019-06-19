@@ -173,11 +173,16 @@ class TrajectoryLearning(object):
             per_trj = self.pca.transform(per_trj)
 
         is_success = self.goal_model.is_success(per_trj)
+        arr = True if 'pi2' in self.type else False
 
         if self.is_sparse:
-            perception_reward = 1.0 if is_success else 0.0
+            if arr:
+                perception_reward = np.zeros(len(per_trj))
+                perception_reward[-1] = 1.0 if is_success else 0.0
+            else:
+                perception_reward = 1.0 if is_success else 0.0
+
         else:
-            arr = True if 'pi2' in self.type else False
             perception_reward = self.s2d.get_expected_return(per_trj, arr)
 
         if jerk:
