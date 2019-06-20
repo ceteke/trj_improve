@@ -98,5 +98,5 @@ class QS2D(object):
             returns.append(r)
 
         if arr:
-            return returns
+            return np.array(returns)
         return expected_return
