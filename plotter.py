@@ -5,8 +5,13 @@ from lfd_improve.utils import confidence_interval
 
 plt.style.use('seaborn-paper')
 
-plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
+plt.rc('text', usetex=True)
+plt.rc('xtick',labelsize=14)
+plt.rc('ytick',labelsize=14)
+
+fontsize = 16
+close = False
 
 
 # skill_dir = '/home/ceteke/Desktop/lfd_improve_demos_sim/open'
@@ -23,50 +28,56 @@ plt.rc('font', family='serif')
 #     'PI2-ES-Cov': range(234,254),
 # }
 
-skill_dir = '/home/ceteke/Desktop/lfd_improve_demos_sim/open'
+skill_dir = '/home/ceteke/Desktop/lfd_improve_demos_sim/{}'.format('close' if close else 'open')
 plots_dir = '/home/ceteke/Desktop'
 
 # Close Sim
-# experiment_names_sparse = {
-#     'PoWER': range(132,152),
-#     'PI2-ES': range(72,92),
-#     'PI2-ES-Cov': range(32,52),
-# }
-#
-# experiment_names_dense = {
-#     'PoWER': range(112,132),
-#     'PI2-ES': range(92,112),
-#     'PI2-ES-Cov': range(52,72),
-# }
+if close:
+    experiment_names_sparse = {
+        'PoWER': range(132,152),
+        'PI$^2$': range(152, 172),
+        'PI$^2$-Cov': range(192, 212),
+        'PI$^2$-ES': range(72,92),
+        'PI$^2$-ES-Cov': range(32,52),
+    }
+
+    experiment_names_dense = {
+        'PoWER': range(112,132),
+        'PI$^2$': range(172, 192),
+        'PI$^2$-Cov': range(212, 232),
+        'PI$^2$-ES': range(92,112),
+        'PI$^2$-ES-Cov': range(52,72),
+    }
 
 # Open Sim
-experiment_names_sparse = {
-    'PoWER': range(314,334),
-    'PI$^2$': range(375, 395),
-    'PI$^2$-Cov': range(415, 435),
-    'PI$^2$-ES': range(274,294),
-    'PI$^2$-ES-Cov': range(254,274),
-}
+else:
+    experiment_names_sparse = {
+        'PoWER': range(314,334),
+        'PI$^2$': range(375, 395),
+        'PI$^2$-Cov': range(415, 435),
+        'PI$^2$-ES': range(274,294),
+        'PI$^2$-ES-Cov': range(254,274),
+    }
 
-experiment_names_dense = {
-    'PoWER': range(334,354),
-    'PI$^2$': range(395, 415),
-    'PI$^2$-Cov': range(435, 455),
-    'PI$^2$-ES': range(294,314),
-    'PI$^2$-ES-Cov': range(234,254),
-}
+    experiment_names_dense = {
+        'PoWER': range(334,354),
+        'PI$^2$': range(395, 415),
+        'PI$^2$-Cov': range(435, 455),
+        'PI$^2$-ES': range(294,314),
+        'PI$^2$-ES-Cov': range(234,254),
+    }
 
 line_styles = {
     'PoWER': 'solid',
     'PI$^2$': 'dotted',
     'PI$^2$-Cov': 'dashed',
     'PI$^2$-ES': 'dashdot',
-    'PI$^2$-ES-Cov': (0, (3, 5, 1, 5, 1, 5))
+    'PI$^2$-ES-Cov': (0, (3, 1, 1, 1))
 }
 
 markers = {
-    'sparse': 'v',
-    'dense': '^'
+    'sparse': '^',
+    'dense': '*'
 }
 
 
@@ -91,20 +102,21 @@ for method, idxs_sparse in experiment_names_sparse.items():
     #dense_var = np.var(success_dense, axis=0)
     dense_var = np.array([confidence_interval(success_dense[:, i]) for i in range(success_dense.shape[1])])
 
-    plt.title(method)
+    plt.title(method, fontsize=fontsize)
 
     X = list(range(1, len(dense_mean)+1))
 
-    plt.plot(X, sparse_mean, label='Sparse', marker=markers['sparse'], markersize=10, linestyle=line_styles[method])
-    plt.plot(X, dense_mean, label='Dense', marker=markers['dense'], markersize=10, linestyle=line_styles[method])
+    plt.plot(X, sparse_mean, label='Sparse', marker=markers['sparse'], markersize=10, linestyle=line_styles[method], linewidth=2.0)
+    plt.plot(X, dense_mean, label='Dense', marker=markers['dense'], markersize=10, linestyle=line_styles[method], linewidth=2.0)
 
     plt.fill_between(X, np.clip(sparse_mean+sparse_var, 0, 1), np.clip(sparse_mean-sparse_var, 0, 1), alpha=0.2)
     plt.fill_between(X, np.clip(dense_mean+dense_var, 0, 1), np.clip(dense_mean-dense_var,0, 1), alpha=0.2)
 
     plt.ylim((0, 1.01))
-    plt.xlabel('Greedy')
-    plt.ylabel('Success')
-    plt.legend()
+    plt.xlabel('Greedy', fontsize=fontsize)
+    plt.ylabel('Success', fontsize=fontsize)
+    plt.legend(prop={'size': fontsize-2})
+    plt.grid()
     plt.savefig('{}/{}.png'.format(plots_dir, method.lower().replace('$', '').replace('^', '')), bbox_inches="tight", dpi=400)
     plt.cla()
     #plt.show()
@@ -120,12 +132,13 @@ for method, idxs_dense in experiment_names_dense.items():
     dense_var = np.array([confidence_interval(success_dense[:, i]) for i in range(success_dense.shape[1])])
 
     X = list(range(1, len(dense_mean) + 1))
-    plt.plot(X, dense_mean, label=method, marker=markers['dense'], markersize=10, linestyle=line_styles[method])
+    plt.plot(X, dense_mean, label=method, linestyle=line_styles[method], linewidth=2.0)
 
 plt.ylim((0, 1.01))
-plt.xlabel('Greedy')
-plt.ylabel('Success')
-plt.legend()
-plt.title("Open")
+plt.xlabel('Greedy', fontsize=fontsize)
+plt.ylabel('Success', fontsize=fontsize)
+plt.legend(prop={'size': fontsize-2})
+plt.title("{}".format('Close' if close else 'Open'), fontsize=fontsize)
+plt.grid()
 plt.savefig('{}/means.png'.format(plots_dir), bbox_inches="tight", dpi=400)
 #plt.show()
