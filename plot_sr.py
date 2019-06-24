@@ -3,8 +3,8 @@ from lfd_improve.experiment import Experiment
 import matplotlib.pyplot as plt
 
 
-skill_dir = '/home/ceteke/Desktop/lfd_improve_demos/open2'
-experiments = list(range(1,6))
+skill_dir = '/home/ceteke/Desktop/lfd_improve_demos_sim/close'
+experiments = list(range(212, 232))
 
 success_greedy = []
 reward_greedy = []
@@ -26,7 +26,7 @@ success_mean = success_greedy.mean(axis=0)
 
 axs[0].plot(X, success_mean)
 axs[0].set_title("Success")
-#axs[0].fill_between(X, success_mean+success_var, success_mean-success_var, alpha=0.2)
+axs[0].fill_between(X, success_mean+success_var, success_mean-success_var, alpha=0.2)
 
 reward_var = reward_greedy.std(axis=0)
 reward_mean = reward_greedy.mean(axis=0)

@@ -3,7 +3,7 @@ from fastdtw import fastdtw
 import scipy.stats
 
 
-def confidence_interval(data, confidence=0.5):
+def confidence_interval(data, confidence=0.9):
     n = len(data)
     std_err = scipy.stats.sem(data)
     h = std_err * scipy.stats.t.ppf((1 + confidence) / 2, n - 1)
