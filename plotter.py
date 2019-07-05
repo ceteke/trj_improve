@@ -14,20 +14,6 @@ fontsize = 16
 close = False
 
 
-# skill_dir = '/home/ceteke/Desktop/lfd_improve_demos_sim/open'
-
-# experiment_names_sparse = {
-#     'PoWER': range(314,334),
-#     'PI2-ES': range(274,294),
-#     'PI2-ES-Cov': range(254,274),
-# }
-#
-# experiment_names_dense = {
-#     'PoWER': range(334,354),
-#     'PI2-ES': range(294,314),
-#     'PI2-ES-Cov': range(234,254),
-# }
-
 skill_dir = '/home/ceteke/Desktop/lfd_improve_demos_sim/{}'.format('close' if close else 'open')
 plots_dir = '/home/ceteke/Desktop'
 

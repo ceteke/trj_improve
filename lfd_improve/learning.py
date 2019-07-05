@@ -110,9 +110,11 @@ class TrajectoryLearning(object):
             raise ValueError("Unknown Policy Search Type")
 
 
-        rand_demo=0
+        rand_demo = 1
         print "Picked demo: ", rand_demo
         t_fit, x_fit, dx_fit, ddx_fit = t_gold[rand_demo], x_gold[rand_demo], dx_gold[rand_demo], ddx_gold[rand_demo]
+
+        print(len(t_fit))
 
         self.dmp.fit(t_fit, x_fit, dx_fit, ddx_fit)
 

@@ -10,7 +10,7 @@ class RenamingUnpickler(pickle.Unpickler, object):
             module = 'lfd_improve.goal_model'
         return super(RenamingUnpickler, self).find_class(module, name)
 
-demo_dir = '/Volumes/Feyyaz/MSc/lfd_improve_demos/open2'
+demo_dir = '/home/ceteke/Desktop/lfd_improve_demos/draw'
 val_dir = os.path.join(demo_dir, 'ex1', 'values.csv')
 goal_model_dir = os.path.join(demo_dir, 'ex1', 'goal_model.pk')
 
@@ -19,7 +19,7 @@ vals = np.loadtxt(val_dir)
 with open(goal_model_dir, 'rb') as fp:
     gm = RenamingUnpickler(fp).load()
 
-tl1 = TrajectoryLearning(demo_dir, 10, 150, 1, 5, False, adaptive_covar=True,
+tl1 = TrajectoryLearning(demo_dir, 10, 150, 1, 5, False,
                          values=vals, goal_model=gm)
 
 goal_model = tl1.goal_model
