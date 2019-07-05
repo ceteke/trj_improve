@@ -110,7 +110,7 @@ class TrajectoryLearning(object):
             raise ValueError("Unknown Policy Search Type")
 
 
-        rand_demo = 1
+        rand_demo = 0
         print "Picked demo: ", rand_demo
         t_fit, x_fit, dx_fit, ddx_fit = t_gold[rand_demo], x_gold[rand_demo], dx_gold[rand_demo], ddx_gold[rand_demo]
 
@@ -153,7 +153,7 @@ class TrajectoryLearning(object):
 
     def generate_episode(self):
         if 'cov' in self.type:
-            std = 1.
+            std = self.std_initial
         else:
             std = self.std
 

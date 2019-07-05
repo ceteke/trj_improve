@@ -32,8 +32,3 @@ for i in range(len(joint_torques)):
 plt.show()
 
 goal_model = HMMGoalModel(np.concatenate(joint_torques, axis=0), map(len, joint_torques))
-
-for i in range(len(joint_torques)):
-    plt.plot(joint_torques[i][:, 0], joint_torques[i][:, 1])
-
-plt.show()

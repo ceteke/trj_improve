@@ -11,7 +11,7 @@ class HMMGoalModel(object):
         warnings.filterwarnings("ignore", category=RuntimeWarning)
 
         if n_states is None:
-            components = [2,4,6,8,10]
+            components = [5]
 
             hmms = [GaussianHMM(n_components=c) for c in components]
 

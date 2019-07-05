@@ -11,8 +11,8 @@ class RenamingUnpickler(pickle.Unpickler, object):
         return super(RenamingUnpickler, self).find_class(module, name)
 
 demo_dir = '/home/ceteke/Desktop/lfd_improve_demos/draw'
-val_dir = os.path.join(demo_dir, 'ex1', 'values.csv')
-goal_model_dir = os.path.join(demo_dir, 'ex1', 'goal_model.pk')
+val_dir = os.path.join(demo_dir, 'ex2', 'values.csv')
+goal_model_dir = os.path.join(demo_dir, 'ex2', 'goal_model.pk')
 
 vals = np.loadtxt(val_dir)
 
@@ -23,6 +23,17 @@ tl1 = TrajectoryLearning(demo_dir, 10, 150, 1, 5, False,
                          values=vals, goal_model=gm)
 
 goal_model = tl1.goal_model
+
+# scc = pickle.load(open('/home/ceteke/Desktop/lfd_improve_demos/draw/ex1/greedy_5/pcae.pk', 'rb'))[1:]
+# s_feats = np.array([s[1] for s in scc])
+# #
+# # fl = pickle.load(open('/home/ceteke/Desktop/lfd_improve_demos/draw/ex2/1/1/pcae.pk', 'rb'))[1:]
+# # f_feats = np.array([s[1] for s in fl])
+# #
+# s_feats = tl1.pca.transform(s_feats)
+# # f_feats = tl1.pca.transform(f_feats)
+# print(tl1.goal_model.hmm.predict(s_feats))
+# exit()
 
 G = pgv.AGraph(strict=False, directed=True, dpi=300)
 
