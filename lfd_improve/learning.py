@@ -11,7 +11,7 @@ import os
 
 class TrajectoryLearning(object):
     def __init__(self, data_dir, n_basis, K, n_sample, n_episode, is_sparse, n_perception=8, alpha=1., beta=0.,
-                 values=None, goal_model=None, type='es-cov', init_std=None, n_goal_states=None):
+                 values=None, goal_model=None, type='es-cov', init_std=None, n_goal_states=None, torque_goal=False):
         '''
         :param data_dir:
         :param n_basis:
@@ -35,6 +35,7 @@ class TrajectoryLearning(object):
         self.n_demo = len(self.demo.demos)
         self.pca = PCA(n_components=n_perception)
         self.n_basis = n_basis
+        self.torque_goal = torque_goal
 
         self.per_lens = list(map(lambda d: len(d.per_feats), self.demo.demos))
         self.per_feats = np.concatenate([d.per_feats for d in self.demo.demos])
@@ -46,7 +47,11 @@ class TrajectoryLearning(object):
         self.is_sparse = is_sparse
 
         if goal_model is None:
-            self.goal_model = HMMGoalModel(self.per_data, self.per_lens, n_goal_states)
+            if torque_goal:
+                torque_data = [t for t in self.demo.demos.torques]
+                self.goal_model = HMMGoalModel(torque_data, list(map(len, torque_data)), n_goal_states)
+            else:
+                self.goal_model = HMMGoalModel(self.per_data, self.per_lens, n_goal_states)
         else:
             self.goal_model = goal_model
 

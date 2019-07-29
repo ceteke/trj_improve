@@ -24,7 +24,7 @@ class QS2D(object):
                         self.v_table.max() - self.v_table.min())  # Normalize values
 
             succ_idx = np.argmax(self.v_table)
-            self.v_table[succ_idx] *= 10. # TODO: This kind of ad-hoc but makes sense as well idk. Maybe we should replace 10 with a smart number
+            #self.v_table[succ_idx] *= 10. # TODO: This kind of ad-hoc but makes sense as well idk. Maybe we should replace 10 with a smart number
 
         else:
             self.v_table = values
@@ -39,10 +39,10 @@ class QS2D(object):
 
     def update(self, v_table, features, states):
         v_table_new = copy.deepcopy(v_table)
-
-        is_success = self.goal_model.is_success(features)
-        rewards = [0.] * len(states)
-        rewards[-1] = 1.0 if is_success else 0.0
+        pred = self.goal_model.hmm.predict(features)
+        #is_success = self.goal_model.is_success(features)
+        rewards = [1. if s in self.goal_model.final_states else 0. for s in pred]
+        #rewards[-1] = 1.0 if is_success else 0.0
 
         for t in range(len(states)):
             s = states[t]

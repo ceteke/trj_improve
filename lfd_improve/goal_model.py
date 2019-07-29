@@ -11,7 +11,7 @@ class HMMGoalModel(object):
         warnings.filterwarnings("ignore", category=RuntimeWarning)
 
         if n_states is None:
-            components = [5]
+            components = [5, 6, 8, 10, 12]
 
             hmms = [GaussianHMM(n_components=c) for c in components]
 
@@ -24,7 +24,8 @@ class HMMGoalModel(object):
             self.hmm.fit(per_data, per_lens)
 
         ll = self.hmm.score(per_data, per_lens)
-        print "Goal HMM n_components", self.hmm.n_components, "Log likelihood", ll
+        aic_ = aic(self.hmm, per_data, per_lens)
+        print "Goal HMM n_components", self.hmm.n_components, "Log likelihood", ll, "AIC", aic_
 
         upper_idxs = [per_lens[0]-1]
         start_idxs = [0]
