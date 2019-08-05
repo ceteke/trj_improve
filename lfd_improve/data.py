@@ -13,10 +13,18 @@ class Demonstration(object):
         per_data = np.loadtxt(per_dir, delimiter=',')
         torque_data = np.loadtxt(torque_dir, delimiter=',')
 
-        self.times = per_data[:, 0]
+        n_points_torque = 150
+
+        N = len(torque_data)
+        idxs = np.arange(0, N, N // n_points_torque)
+        torque_data = torque_data[idxs]
+
+        print("N tq: ", len(torque_data))
+
+        self.times = robot_data[:, 0]
         self.ee_poses = robot_data[:, 1:]
         self.per_feats = per_data[:, 1:]
-        self.torques = torque_data[:, 1:]
+        self.torques = torque_data[:, 1:8] # Last 2 is gripper torques
 
         self.spliner = Spliner(self.times, self.ee_poses)
         self.t, self.x, self.dx, self.ddx, self.dddx = self.spliner.get_motion

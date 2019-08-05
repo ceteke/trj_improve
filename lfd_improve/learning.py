@@ -48,8 +48,10 @@ class TrajectoryLearning(object):
 
         if goal_model is None:
             if torque_goal:
-                torque_data = [t for t in self.demo.demos.torques]
-                self.goal_model = HMMGoalModel(torque_data, list(map(len, torque_data)), n_goal_states)
+                torque_data = [d.torques for d in self.demo.demos]
+                torque_lens = list(map(len, torque_data))
+                torque_data = np.concatenate(torque_data, axis=0)
+                self.goal_model = HMMGoalModel(torque_data, torque_lens, n_goal_states)
             else:
                 self.goal_model = HMMGoalModel(self.per_data, self.per_lens, n_goal_states)
         else:
@@ -58,7 +60,8 @@ class TrajectoryLearning(object):
         print "Learning reward function..."
         if not is_sparse:
             if values is None:
-                self.s2d = QS2D(self.goal_model)
+                niter = 5 if self.torque_goal else 50
+                self.s2d = QS2D(self.goal_model, n_iter=niter)
             else:
                 self.s2d = QS2D(self.goal_model, values=values)
 
@@ -176,8 +179,9 @@ class TrajectoryLearning(object):
         return 1. / total_jerk
 
     def get_reward(self, per_trj, jerk, ts, x):
-        if per_trj.shape[-1] != self.n_perception:
-            per_trj = self.pca.transform(per_trj)
+        if not self.torque_goal:
+            if per_trj.shape[-1] != self.n_perception:
+                per_trj = self.pca.transform(per_trj)
 
         is_success = self.goal_model.is_success(per_trj)
         arr = True if 'pi2' in self.type else False

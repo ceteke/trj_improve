@@ -8,18 +8,18 @@ n_rollout = 5
 
 #print np.linalg.norm(np.loadtxt('/home/ceteke/Desktop/lfd_improve_demos_sim/open/ex153/5/10/cma_cov.csv', delimiter=',') - np.loadtxt('/home/ceteke/Desktop/lfd_improve_demos_sim/open/ex153/1/1/cma_cov.csv', delimiter=','))
 #exit()
-tl1 = TrajectoryLearning('/home/ceteke/Desktop/lfd_improve_demos/draw', 11, 100, 1, 5, True, init_std=0.333)
+tl1 = TrajectoryLearning('/home/alive/Desktop/torque_demos/close', 11, 100, 1, 5, True, init_std=1, torque_goal=True)
 
-scc = pickle.load(open('/home/ceteke/Desktop/lfd_improve_demos/draw/ex2/greedy_5/pcae.pk', 'rb'))[1:]
-s_feats = np.array([s[1] for s in scc])
+#scc = pickle.load(open('/home/ceteke/Desktop/lfd_improve_demos/draw/ex2/greedy_5/pcae.pk', 'rb'))[1:]
+#s_feats = np.array([s[1] for s in scc])
 #
 # fl = pickle.load(open('/home/ceteke/Desktop/lfd_improve_demos/draw/ex2/1/1/pcae.pk', 'rb'))[1:]
 # f_feats = np.array([s[1] for s in fl])
 #
-s_feats = tl1.pca.transform(s_feats)
+#s_feats = tl1.pca.transform(s_feats)
 # f_feats = tl1.pca.transform(f_feats)
-print(tl1.goal_model.hmm.predict(s_feats))
-exit()
+#print(tl1.goal_model.hmm.predict(s_feats))
+#exit()
 # plt.scatter(s_feats[:, 0], s_feats[:, 1])
 # plt.scatter(f_feats[:, 0], f_feats[:, 1])
 #

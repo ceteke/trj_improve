@@ -6,49 +6,50 @@ from lfd_improve.sparse2dense import QS2D
 
 
 torques = [
-    '/media/alive/Feyyaz/MSc/lfd_improve_demos/draw/1/joint_torques.pk',
-    '/media/alive/Feyyaz/MSc/lfd_improve_demos/draw/2/joint_torques.pk'
+    '/home/alive/Desktop/torque_demos/close/1/joint_torques.csv',
+    '/home/alive/Desktop/torque_demos/close/2/joint_torques.csv'
 ]
 
 pers = [
-    '/media/alive/Feyyaz/MSc/lfd_improve_demos/draw/1/pcae.pk',
-    '/media/alive/Feyyaz/MSc/lfd_improve_demos/draw/2/pcae.pk'
+    '/home/alive/Desktop/torque_demos/close/1/perception.csv',
+    '/home/alive/Desktop/torque_demos/close/2/perception.csv'
 ]
 
 joint_torques = []
 torque_times = []
 per_times = []
 
+#for t in torques:
+    #toq = pickle.load(open(t, 'rb'))[1:]
+    #joint_torques.append(np.array([tf[1] for tf in toq]))
+    #torque_times.append(np.array([tf[0] for tf in toq]))
+
 for t in torques:
-    toq = pickle.load(open(t, 'rb'))[1:]
-    joint_torques.append(np.array([tf[1] for tf in toq]))
-    torque_times.append(np.array([tf[0] for tf in toq]))
+    toq = np.loadtxt(t, delimiter=',')
+    joint_torques.append(toq[:, 1:8])
+    torque_times.append(toq[:, 0])
 
 for p in pers:
-    toq = pickle.load(open(p, 'rb'))[1:]
-    per_times.append(np.array([tf[0] for tf in toq]))
-
-for i, jt in enumerate(torque_times):
-    torque_times[i] -= torque_times[i][0]
-
-for i, jt in enumerate(per_times):
-    per_times[i] -= per_times[i][0]
+    toq = np.loadtxt(p, delimiter=',')
+    per_times.append(toq[:, 0])
 
 n_points = 250
 
 for i in range(len(joint_torques)):
     N = len(joint_torques[i])
+    print(N, N//n_points)
     idxs = np.arange(0, N, N//n_points)
     joint_torques[i] = joint_torques[i][idxs]
     torque_times[i] = torque_times[i][idxs]
+
+print(list(map(len, torque_times)))
 
 f, axs = plt.subplots(7)
 
 colors = []
 for i in range(len(joint_torques)):
     for k in range(7):
-        p = axs[k].plot(torque_times[i],
-                    joint_torques[i][:, k])
+        p = axs[k].plot(torque_times[i], joint_torques[i][:, k])
     colors.append(p[0].get_color())
 
 print(colors)
