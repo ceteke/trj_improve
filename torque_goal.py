@@ -6,13 +6,13 @@ from lfd_improve.sparse2dense import QS2D
 
 
 torques = [
-    '/home/alive/Desktop/torque_demos/close/1/joint_torques.csv',
-    '/home/alive/Desktop/torque_demos/close/2/joint_torques.csv'
+    '/home/alive/Desktop/torque_demos/close2/1/joint_torques.csv',
+    '/home/alive/Desktop/torque_demos/close2/2/joint_torques.csv'
 ]
 
 pers = [
-    '/home/alive/Desktop/torque_demos/close/1/perception.csv',
-    '/home/alive/Desktop/torque_demos/close/2/perception.csv'
+    '/home/alive/Desktop/torque_demos/close2/1/perception.csv',
+    '/home/alive/Desktop/torque_demos/close2/2/perception.csv'
 ]
 
 joint_torques = []

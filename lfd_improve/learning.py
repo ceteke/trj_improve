@@ -71,9 +71,9 @@ class TrajectoryLearning(object):
 
         print "Forming demonstration data..."
         for d in self.demo.demos:
-            spliner = Spliner(d.times, d.ee_poses)
-            dynamics_demo = spliner.get_motion
-            for i, dyn in enumerate(dynamics_demo):
+            #spliner = Spliner(d.times, d.ee_poses)
+            #dynamics_demo = spliner.get_motion
+            for i, dyn in enumerate((d.t, d.x, d.dx, d.ddx, d.dddx)):
                 dynamics_gold[i].append(dyn)
 
         t_gold, x_gold, dx_gold, ddx_gold, dddx_gold = dynamics_gold
@@ -121,8 +121,6 @@ class TrajectoryLearning(object):
         rand_demo = 0
         print "Picked demo: ", rand_demo
         t_fit, x_fit, dx_fit, ddx_fit = t_gold[rand_demo], x_gold[rand_demo], dx_gold[rand_demo], ddx_gold[rand_demo]
-
-        print(len(t_fit))
 
         self.dmp.fit(t_fit, x_fit, dx_fit, ddx_fit)
 

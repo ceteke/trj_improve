@@ -1,5 +1,6 @@
 import pickle, os, numpy as np
 from spliner import Spliner
+import matplotlib.pyplot as plt
 
 
 class Demonstration(object):
@@ -19,15 +20,19 @@ class Demonstration(object):
         idxs = np.arange(0, N, N // n_points_torque)
         torque_data = torque_data[idxs]
 
-        print("N tq: ", len(torque_data))
+        #print("N tq: ", len(torque_data))
 
-        self.times = robot_data[:, 0]
+        times = robot_data[:, 0]
         self.ee_poses = robot_data[:, 1:]
         self.per_feats = per_data[:, 1:]
         self.torques = torque_data[:, 1:8] # Last 2 is gripper torques
 
-        self.spliner = Spliner(self.times, self.ee_poses)
+        self.spliner = Spliner(times, self.ee_poses)
         self.t, self.x, self.dx, self.ddx, self.dddx = self.spliner.get_motion
+
+        # plt.plot(self.t, self.x)
+        # plt.plot(times, self.ee_poses, linestyle=':')
+        # plt.show()
 
 class MultiDemonstration(object):
     def __init__(self, data_dir):

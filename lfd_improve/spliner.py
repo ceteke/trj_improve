@@ -11,15 +11,18 @@ class Spliner(object):
 
     @property
     def get_motion(self):
-        x = np.zeros((len(self.t), 7))
+        dt = 0.05
+        times = np.arange(self.t[0], self.t[-1]+dt, dt)
+
+        x = np.zeros((len(times), 7))
         dx = np.zeros_like(x)
         ddx = np.zeros_like(dx)
         dddx = np.zeros_like(ddx)
 
         for i in range(7):
-            x[:,i] = self.splines[i](self.t)
-            dx[:, i] = self.splines[i].derivative(1)(self.t)
-            ddx[:, i] = self.splines[i].derivative(2)(self.t)
-            dddx[:, i] = self.splines[i].derivative(3)(self.t)
+            x[:,i] = self.splines[i](times)
+            dx[:, i] = self.splines[i].derivative(1)(times)
+            ddx[:, i] = self.splines[i].derivative(2)(times)
+            dddx[:, i] = self.splines[i].derivative(3)(times)
 
-        return self.t, x, dx, ddx, dddx
+        return times, x, dx, ddx, dddx
